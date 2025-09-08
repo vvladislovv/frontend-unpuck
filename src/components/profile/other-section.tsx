@@ -6,6 +6,7 @@ import {
     ChevronRightIcon,
     UserGroupIcon
 } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
 
 const otherItems = [
   {
@@ -36,13 +37,15 @@ const links = [
     title: 'Пользовательское соглашение',
     href: '/terms',
   },
-  {
-    title: 'Безопасная сделка',
-    href: '/secure-deal',
-  },
 ]
 
 export function OtherSection() {
+  const router = useRouter()
+
+  const handleItemClick = (href: string) => {
+    router.push(href)
+  }
+
   return (
     <div className="space-y-4">
       {/* Другое */}
@@ -57,6 +60,7 @@ export function OtherSection() {
             return (
               <button
                 key={item.id}
+                onClick={() => handleItemClick(item.href)}
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center space-x-3">
@@ -80,6 +84,7 @@ export function OtherSection() {
         {links.map((link) => (
           <button
             key={link.href}
+            onClick={() => handleItemClick(link.href)}
             className="w-full text-left text-sm text-blue-600 hover:text-blue-800 underline"
           >
             {link.title}
@@ -89,3 +94,4 @@ export function OtherSection() {
     </div>
   )
 }
+

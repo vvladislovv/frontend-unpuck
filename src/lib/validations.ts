@@ -53,3 +53,4 @@ export type ProfileFormData = z.infer<typeof profileSchema>
 export type ProductFormData = z.infer<typeof productSchema>
 export type SearchFormData = z.infer<typeof searchSchema>
 export type ContactFormData = z.infer<typeof contactSchema>
+

@@ -1,7 +1,8 @@
 'use client'
 
-import { Deal, DealStatus } from '@/types'
-import { useState } from 'react'
+import { getDealsFromStorage, saveDealsToStorage } from '@/lib/storage'
+import { Deal } from '@/types'
+import { useEffect, useState } from 'react'
 import { DealCard } from './deal-card'
 
 // Тестовые данные сделок
@@ -153,54 +154,71 @@ const mockDeals: Deal[] = [
   },
 ]
 
-const statusFilters: { id: DealStatus | 'all'; label: string; count: number }[] = [
-  { id: 'all', label: 'Все', count: mockDeals.length },
-  { id: 'pending', label: 'Ожидает', count: mockDeals.filter(d => d.status === 'pending').length },
-  { id: 'confirmed', label: 'Подтверждено', count: mockDeals.filter(d => d.status === 'confirmed').length },
-  { id: 'shipped', label: 'Отправлено', count: mockDeals.filter(d => d.status === 'shipped').length },
-  { id: 'delivered', label: 'Доставлено', count: mockDeals.filter(d => d.status === 'delivered').length },
-  { id: 'cancelled', label: 'Отменено', count: mockDeals.filter(d => d.status === 'cancelled').length },
-]
-
 export function DealsContent() {
-  const [selectedStatus, setSelectedStatus] = useState<DealStatus | 'all'>('all')
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredDeals = selectedStatus === 'all' 
-    ? mockDeals 
-    : mockDeals.filter(deal => deal.status === selectedStatus)
+  useEffect(() => {
+    // Сначала проверяем localStorage
+    const storedDeals = getDealsFromStorage()
+    if (storedDeals) {
+      setDeals(storedDeals)
+      setLoading(false)
+      return
+    }
+
+    // Если в localStorage нет, инициализируем с mockDeals
+    setDeals(mockDeals)
+    saveDealsToStorage(mockDeals)
+    setLoading(false)
+  }, [])
+
+  // Слушаем изменения в localStorage и кастомные события
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedDeals = getDealsFromStorage()
+      if (storedDeals) {
+        setDeals(storedDeals)
+      }
+    }
+
+    const handleDealUpdate = () => {
+      const storedDeals = getDealsFromStorage()
+      if (storedDeals) {
+        setDeals(storedDeals)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('dealUpdated', handleDealUpdate)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('dealUpdated', handleDealUpdate)
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">
       {/* Заголовок */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 pt-6">
         <h1 className="text-xl font-bold text-gray-900">Сделки</h1>
       </div>
 
-      {/* Фильтры статусов */}
-      <div className="px-4 py-4">
-        <div className="flex space-x-2 overflow-x-auto pb-2">
-          {statusFilters.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => setSelectedStatus(filter.id)}
-              className={`flex items-center space-x-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                selectedStatus === filter.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <span>{filter.label}</span>
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
-                {filter.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Список сделок */}
-      <div className="px-4 pb-4">
-        {filteredDeals.length === 0 ? (
+      <div className="px-6 pb-6 pt-6">
+        {deals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-gray-400 mb-4">
               <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,8 +232,11 @@ export function DealsContent() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredDeals.map((deal) => (
-              <DealCard key={deal.id} deal={deal} />
+            {deals.map((deal) => (
+              <DealCard 
+                key={deal.id} 
+                deal={deal}
+              />
             ))}
           </div>
         )}
@@ -223,3 +244,4 @@ export function DealsContent() {
     </div>
   )
 }
+

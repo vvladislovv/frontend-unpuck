@@ -44,6 +44,23 @@ export default function ProductPage() {
     router.back()
   }
 
+  const handleAddToCart = () => {
+    // Переход к странице оплаты с передачей данных товара
+    const params = new URLSearchParams({
+      productId: mockProduct.id,
+      quantity: '1',
+      price: mockProduct.price.toString(),
+      originalPrice: mockProduct.originalPrice?.toString() || '',
+      title: mockProduct.title,
+      image: mockProduct.images[0],
+      sellerId: mockProduct.seller.id,
+      sellerName: mockProduct.seller.name,
+      sellerVerified: mockProduct.seller.verified.toString()
+    })
+    
+    router.push(`/payment?${params.toString()}`)
+  }
+
   const discountPercentage = mockProduct.originalPrice 
     ? Math.round(((mockProduct.originalPrice - mockProduct.price) / mockProduct.originalPrice) * 100)
     : 0
@@ -164,6 +181,7 @@ export default function ProductPage() {
 
           {/* Кнопка покупки */}
           <button
+            onClick={handleAddToCart}
             className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
               mockProduct.inStock
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -171,7 +189,7 @@ export default function ProductPage() {
             }`}
             disabled={!mockProduct.inStock}
           >
-            {mockProduct.inStock ? 'Добавить в корзину' : 'Нет в наличии'}
+            {mockProduct.inStock ? 'Купить сейчас' : 'Нет в наличии'}
           </button>
         </div>
       </div>

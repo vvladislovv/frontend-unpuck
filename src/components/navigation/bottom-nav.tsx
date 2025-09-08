@@ -93,3 +93,4 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
     </nav>
   )
 }
+

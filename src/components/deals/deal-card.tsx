@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Deal } from '@/types'
+import { Deal, DealStatus } from '@/types'
 import {
     CheckCircleIcon,
     ClockIcon,
@@ -9,12 +9,19 @@ import {
     XCircleIcon
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface DealCardProps {
   deal: Deal
 }
 
-const statusConfig = {
+const statusConfig: Record<DealStatus, {
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  color: string
+  bgColor: string
+  borderColor: string
+}> = {
   pending: {
     label: 'Ожидает подтверждения',
     icon: ClockIcon,
@@ -76,12 +83,12 @@ export function DealCard({ deal }: DealCardProps) {
 
   return (
     <div className={cn(
-      'rounded-lg border p-4 transition-shadow hover:shadow-md',
+      'rounded-lg border p-6 transition-shadow hover:shadow-md',
       config.bgColor,
       config.borderColor
     )}>
       {/* Заголовок с статусом */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <StatusIcon className={cn('h-5 w-5', config.color)} />
           <span className={cn('text-sm font-medium', config.color)}>
@@ -94,13 +101,17 @@ export function DealCard({ deal }: DealCardProps) {
       </div>
 
       {/* Информация о товаре */}
-      <div className="flex space-x-3 mb-3">
+      <div className="flex space-x-4 mb-4">
         <div className="relative h-16 w-16 flex-shrink-0">
           <Image
-            src={deal.product.images[0]}
+            src={deal.product.images[0] || '/api/placeholder/300/300'}
             alt={deal.product.title}
             fill
             className="rounded-lg object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              target.src = '/api/placeholder/300/300'
+            }}
           />
         </div>
         
@@ -123,7 +134,7 @@ export function DealCard({ deal }: DealCardProps) {
       </div>
 
       {/* Дополнительная информация */}
-      <div className="space-y-2 text-xs text-gray-600">
+      <div className="space-y-3 text-xs text-gray-600 mb-4">
         <div className="flex justify-between">
           <span>Способ оплаты:</span>
           <span className="font-medium">{getPaymentMethodLabel(deal.paymentMethod)}</span>
@@ -147,23 +158,15 @@ export function DealCard({ deal }: DealCardProps) {
       </div>
 
       {/* Действия */}
-      <div className="mt-4 flex space-x-2">
-        <button className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+      <div className="mt-6">
+        <Link 
+          href={`/deals/${deal.id}`}
+          className="block w-full rounded-lg bg-blue-600 px-6 py-4 text-base font-medium text-white hover:bg-blue-700 transition-colors text-center"
+        >
           Подробнее
-        </button>
-        
-        {deal.status === 'delivered' && (
-          <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            Оценить
-          </button>
-        )}
-        
-        {(deal.status === 'pending' || deal.status === 'confirmed') && (
-          <button className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors">
-            Отменить
-          </button>
-        )}
+        </Link>
       </div>
     </div>
   )
 }
+

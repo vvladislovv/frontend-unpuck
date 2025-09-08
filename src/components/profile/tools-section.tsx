@@ -1,11 +1,11 @@
 'use client'
 
 import {
-    AcademicCapIcon,
     ChartBarIcon,
     ChevronRightIcon,
     QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
 
 const toolsItems = [
   {
@@ -14,13 +14,6 @@ const toolsItems = [
     description: 'Часто задаваемые вопросы',
     icon: QuestionMarkCircleIcon,
     href: '/faq',
-  },
-  {
-    id: 'academy',
-    title: 'Академия',
-    description: 'Обучающие материалы',
-    icon: AcademicCapIcon,
-    href: '/academy',
   },
   {
     id: 'statistics',
@@ -32,6 +25,12 @@ const toolsItems = [
 ]
 
 export function ToolsSection() {
+  const router = useRouter()
+
+  const handleItemClick = (href: string) => {
+    router.push(href)
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-4 py-3 border-b border-gray-200">
@@ -44,6 +43,7 @@ export function ToolsSection() {
           return (
             <button
               key={item.id}
+              onClick={() => handleItemClick(item.href)}
               className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center space-x-3">
@@ -63,3 +63,4 @@ export function ToolsSection() {
     </div>
   )
 }
+

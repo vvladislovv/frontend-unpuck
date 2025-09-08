@@ -7,6 +7,7 @@ import {
     ShieldCheckIcon,
     UserIcon
 } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
 
 const profileItems = [
   {
@@ -40,6 +41,12 @@ const profileItems = [
 ]
 
 export function ProfileSection() {
+  const router = useRouter()
+
+  const handleItemClick = (href: string) => {
+    router.push(href)
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-4 py-3 border-b border-gray-200">
@@ -52,6 +59,7 @@ export function ProfileSection() {
           return (
             <button
               key={item.id}
+              onClick={() => handleItemClick(item.href)}
               className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center space-x-3">
@@ -71,3 +79,4 @@ export function ProfileSection() {
     </div>
   )
 }
+
