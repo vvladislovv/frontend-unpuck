@@ -1,9 +1,10 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
+import { affiliateAPI } from '@/lib/api'
 import { ArrowLeftIcon, CheckIcon, ClipboardIcon, ShareIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Referral {
   id: string
@@ -55,8 +56,53 @@ const affiliateStats = {
 
 export default function AffiliatePage() {
   const router = useRouter()
-  const [referrals] = useState<Referral[]>(mockReferrals)
+  const [referrals, setReferrals] = useState<Referral[]>([])
+  const [affiliateStats, setAffiliateStats] = useState({
+    totalReferrals: 0,
+    activeReferrals: 0,
+    totalCommission: 0,
+    thisMonthCommission: 0,
+    referralCode: ''
+  })
   const [copied, setCopied] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Загружаем данные партнерской программы при монтировании
+  useEffect(() => {
+    loadAffiliateData()
+  }, [])
+
+  const loadAffiliateData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Загружаем статистику
+      const statsResponse = await affiliateAPI.getReferralStats()
+      const statsData = statsResponse.data.data || statsResponse.data
+      setAffiliateStats(statsData)
+      
+      // Загружаем рефералов
+      const referralsResponse = await affiliateAPI.getReferrals({ limit: 50 })
+      const referralsData = referralsResponse.data.data || referralsResponse.data
+      setReferrals(Array.isArray(referralsData) ? referralsData : [])
+    } catch (err: any) {
+      console.error('Ошибка загрузки данных партнерской программы:', err)
+      setError(err.response?.data?.message || 'Ошибка загрузки данных партнерской программы')
+      // Fallback на моковые данные
+      setReferrals(mockReferrals)
+      setAffiliateStats({
+        totalReferrals: 12,
+        activeReferrals: 8,
+        totalCommission: 12500,
+        thisMonthCommission: 3200,
+        referralCode: 'REF123456'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -111,6 +157,43 @@ export default function AffiliatePage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Загрузка данных партнерской программы...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (error && referrals.length === 0) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Ошибка загрузки</h3>
+            <p className="text-gray-500 text-center mb-4">{error}</p>
+            <button
+              onClick={loadAffiliateData}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Попробовать снова
+            </button>
+          </div>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (

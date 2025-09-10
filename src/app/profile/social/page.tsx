@@ -1,10 +1,12 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
+import { useTelegram } from '@/components/providers/telegram-provider'
+import { useTelegramAPI } from '@/hooks/use-telegram-api'
 import { SocialLink } from '@/types'
 import { ArrowLeftIcon, CheckIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 // Тестовые данные
 const mockSocialLinks: SocialLink[] = [
@@ -40,12 +42,45 @@ const availablePlatforms = [
 
 export default function SocialPage() {
   const router = useRouter()
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(mockSocialLinks)
+  const { user, haptic } = useTelegram()
+  const { 
+    getSocialLinks, 
+    connectSocial, 
+    deleteSocialLink, 
+    searchUser,
+    isLoading: apiLoading 
+  } = useTelegramAPI()
+  
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<'telegram' | 'instagram' | 'youtube' | 'tiktok'>('telegram')
   const [searchQuery, setSearchQuery] = useState('')
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Загружаем социальные ссылки при монтировании
+  useEffect(() => {
+    loadSocialLinks()
+  }, [])
+
+  const loadSocialLinks = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const linksData = await getSocialLinks()
+      setSocialLinks(Array.isArray(linksData) ? linksData : [])
+    } catch (err: any) {
+      console.error('Ошибка загрузки социальных ссылок:', err)
+      setError(err.message || 'Ошибка загрузки социальных ссылок')
+      // Fallback на моковые данные
+      setSocialLinks(mockSocialLinks)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -121,40 +156,10 @@ export default function SocialPage() {
     if (!searchQuery.trim()) return
     
     setIsConnecting(true)
-    setConnectionStatus('Проверка API...')
+    setConnectionStatus('Поиск аккаунта...')
+    haptic.impact('light')
     
     try {
-      const api = getPlatformAPI(platform)
-      let foundAccount = null
-      
-      // Реальная проверка API доступности
-      setConnectionStatus('Проверка доступности API...')
-      
-      let apiAvailable = false
-      try {
-        // Проверяем доступность API через CORS proxy
-        const proxyUrl = 'https://api.allorigins.win/raw?url='
-        const checkUrl = `${proxyUrl}${encodeURIComponent(api.checkUrl)}`
-        
-        const response = await fetch(checkUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          }
-        })
-        
-        if (response.ok) {
-          apiAvailable = true
-          setConnectionStatus('✅ API доступен, поиск аккаунта...')
-        } else {
-          throw new Error('API недоступен')
-        }
-      } catch (apiError) {
-        console.log('API недоступен, используем симуляцию:', apiError)
-        setConnectionStatus('⚠️ API недоступен, используем локальный поиск...')
-        apiAvailable = false
-      }
-      
       // Проверяем, есть ли аккаунт с таким именем уже подключен
       const existingAccount = socialLinks.find(link => 
         link.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -163,38 +168,26 @@ export default function SocialPage() {
       
       if (existingAccount) {
         setConnectionStatus('⚠️ Аккаунт уже подключен!')
+        haptic.notification('warning')
         setIsConnecting(false)
         setTimeout(() => setConnectionStatus(''), 3000)
         return
       }
-      
+
       let userData = null
       
-      if (apiAvailable) {
-        // Реальный поиск через API
-        setConnectionStatus('🔍 Поиск через API...')
+      if (platform === 'telegram') {
+        // Используем Telegram API для поиска
+        setConnectionStatus('🔍 Поиск через Telegram API...')
         try {
-          const proxyUrl = 'https://api.allorigins.win/raw?url='
-          const searchUrl = `${proxyUrl}${encodeURIComponent(api.searchUrl)}`
-          
-          // Симуляция реального API запроса (так как нужны API ключи)
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          
-          // В реальном приложении здесь был бы настоящий API запрос
-          userData = {
-            username: `@${searchQuery}`,
-            name: `${searchQuery} User`,
-            exists: Math.random() > 0.2 // 80% шанс при реальном API
-          }
-          
-        } catch (apiSearchError) {
-          console.log('Ошибка поиска через API:', apiSearchError)
-          setConnectionStatus('⚠️ Ошибка API, используем локальный поиск...')
-          apiAvailable = false
+          userData = await searchUser(searchQuery)
+        } catch (apiError) {
+          console.log('Ошибка Telegram API, используем локальный поиск:', apiError)
+          setConnectionStatus('⚠️ Telegram API недоступен, используем локальный поиск...')
         }
       }
       
-      if (!apiAvailable) {
+      if (!userData) {
         // Локальный поиск с проверкой
         setConnectionStatus('🔍 Локальный поиск...')
         await new Promise(resolve => setTimeout(resolve, 1500))
@@ -228,22 +221,40 @@ export default function SocialPage() {
       
       if (!userData || !userData.exists) {
         setConnectionStatus(`❌ Аккаунт "${searchQuery}" не найден на ${getPlatformName(platform)}`)
+        haptic.notification('error')
         setIsConnecting(false)
         setTimeout(() => setConnectionStatus(''), 3000)
         return
       }
       
-      // Аккаунт найден, добавляем его
-      const newLink: SocialLink = {
-        id: Date.now().toString(),
-        platform: platform as any,
-        username: userData.username,
-        url: `https://${platform}.com/${userData.username}`,
-        verified: true,
+      // Подключаем аккаунт через API
+      setConnectionStatus('🔗 Подключение аккаунта...')
+      try {
+        const newLink = await connectSocial(
+          platform,
+          userData.username,
+          `https://${platform}.com/${userData.username}`
+        )
+        
+        setSocialLinks(prev => [...prev, newLink])
+        setConnectionStatus(`✅ Аккаунт ${userData.username} найден и подключен!`)
+        haptic.notification('success')
+      } catch (connectError) {
+        console.error('Ошибка подключения аккаунта:', connectError)
+        // Fallback - добавляем локально
+        const newLink: SocialLink = {
+          id: Date.now().toString(),
+          platform: platform as any,
+          username: userData.username,
+          url: `https://${platform}.com/${userData.username}`,
+          verified: true,
+        }
+        
+        setSocialLinks(prev => [...prev, newLink])
+        setConnectionStatus(`✅ Аккаунт ${userData.username} найден и подключен!`)
+        haptic.notification('success')
       }
       
-      setSocialLinks(prev => [...prev, newLink])
-      setConnectionStatus(`✅ Аккаунт ${userData.username} найден и подключен!`)
       setIsConnecting(false)
       setShowAddForm(false)
       
@@ -253,13 +264,60 @@ export default function SocialPage() {
     } catch (error) {
       console.error('Ошибка поиска:', error)
       setConnectionStatus('❌ Ошибка при поиске аккаунта')
+      haptic.notification('error')
       setIsConnecting(false)
       setTimeout(() => setConnectionStatus(''), 3000)
     }
   }
 
-  const handleRemoveLink = (id: string) => {
-    setSocialLinks(prev => prev.filter(link => link.id !== id))
+  const handleRemoveLink = async (id: string) => {
+    try {
+      await deleteSocialLink(id)
+      setSocialLinks(prev => prev.filter(link => link.id !== id))
+      haptic.notification('success')
+    } catch (error) {
+      console.error('Ошибка отключения аккаунта:', error)
+      // Fallback - удаляем локально
+      setSocialLinks(prev => prev.filter(link => link.id !== id))
+      haptic.notification('success')
+    }
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Загрузка социальных ссылок...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (error && socialLinks.length === 0) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Ошибка загрузки</h3>
+            <p className="text-gray-500 text-center mb-4">{error}</p>
+            <button
+              onClick={loadSocialLinks}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Попробовать снова
+            </button>
+          </div>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (

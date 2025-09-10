@@ -1,11 +1,4 @@
 {
-  "/faq/page": "app/faq/page.js",
-  "/statistics/page": "app/statistics/page.js",
-  "/profile/verification/page": "app/profile/verification/page.js",
-  "/profile/social/page": "app/profile/social/page.js",
-  "/profile/edit/page": "app/profile/edit/page.js",
-  "/profile/payments/page": "app/profile/payments/page.js",
-  "/catalog/page": "app/catalog/page.js",
-  "/deals/page": "app/deals/page.js",
-  "/deals/[id]/page": "app/deals/[id]/page.js"
+  "/admin/page": "app/admin/page.js",
+  "/_not-found/page": "app/_not-found/page.js"
 }

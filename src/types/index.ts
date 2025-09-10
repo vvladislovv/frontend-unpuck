@@ -101,8 +101,43 @@ export interface SocialLink {
   verified: boolean
 }
 
+// Админка
+export interface AdminMessage {
+  id: string
+  userId: string
+  userName: string
+  userAvatar?: string
+  message: string
+  type: 'support' | 'complaint' | 'suggestion' | 'other'
+  status: 'new' | 'in_progress' | 'resolved'
+  adminReply?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminStats {
+  totalUsers: number
+  totalProducts: number
+  totalDeals: number
+  pendingMessages: number
+  revenue: number
+  newUsersToday: number
+  newProductsToday: number
+  completedDealsToday: number
+}
+
+export interface AdminUser extends User {
+  lastLogin?: string
+  totalSpent: number
+  totalEarned: number
+  dealsCount: number
+  productsCount: number
+  isBlocked: boolean
+  blockReason?: string
+}
+
 // Навигация
-export type TabType = 'catalog' | 'deals' | 'profile'
+export type TabType = 'catalog' | 'deals' | 'profile' | 'admin'
 
 // Состояние приложения
 export interface AppState {

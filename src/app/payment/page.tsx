@@ -1,6 +1,7 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
+import { paymentAPI } from '@/lib/api'
 import { ArrowLeftIcon, CheckCircleIcon, CreditCardIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -92,21 +93,15 @@ export default function PaymentPage() {
     
     try {
       // Создание платежа через API
-      const response = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productId: paymentData.productId,
-          quantity: paymentData.quantity,
-          totalPrice: paymentData.totalPrice,
-          userId: 'user_123', // В реальном приложении будет из контекста авторизации
-          paymentMethod
-        })
+      const response = await paymentAPI.createPayment({
+        productId: paymentData.productId,
+        quantity: paymentData.quantity,
+        totalPrice: paymentData.totalPrice,
+        userId: 'user_123', // В реальном приложении будет из контекста авторизации
+        paymentMethod
       })
 
-      const result = await response.json()
+      const result = response.data
 
       if (result.success && result.payment) {
         // В реальном приложении здесь будет перенаправление на ЮKassa
@@ -117,9 +112,9 @@ export default function PaymentPage() {
       } else {
         throw new Error(result.error || 'Ошибка при создании платежа')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка при обработке платежа:', error)
-      alert('Произошла ошибка при обработке платежа. Попробуйте еще раз.')
+      alert(error.response?.data?.message || 'Произошла ошибка при обработке платежа. Попробуйте еще раз.')
     } finally {
       setIsProcessing(false)
     }

@@ -9,7 +9,10 @@
         "start": "next start",
         "lint": "next lint",
         "type-check": "tsc --noEmit",
-        "test": "echo \"No tests configured\" && exit 0"
+        "test": "echo \"No tests configured\" && exit 0",
+        "test:api": "node test-api.js",
+        "test:api:local": "node test-api.js http://localhost:3001",
+        "test:api:prod": "node test-api.js https://api.unpacker-clone.com"
     },
     "dependencies": {
         "@headlessui/react": "^1.7.17",
@@ -26,6 +29,7 @@
         "@radix-ui/react-tabs": "^1.0.4",
         "@radix-ui/react-toast": "^1.1.5",
         "@tanstack/react-query": "^5.17.1",
+        "@twa-dev/sdk": "^8.0.2",
         "@types/node": "^20.10.6",
         "@types/react": "^18.2.46",
         "@types/react-dom": "^18.2.18",

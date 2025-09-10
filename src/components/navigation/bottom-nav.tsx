@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { TabType } from '@/types'
 import {
+    Cog6ToothIcon,
     ShoppingBagIcon,
     Squares2X2Icon,
     UserIcon,
@@ -33,6 +34,12 @@ const tabs = [
     label: 'Профиль',
     icon: UserIcon,
     href: '/profile',
+  },
+  {
+    id: 'admin' as TabType,
+    label: 'Админка',
+    icon: Cog6ToothIcon,
+    href: '/admin',
   },
 ]
 

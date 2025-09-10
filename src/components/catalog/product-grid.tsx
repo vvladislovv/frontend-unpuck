@@ -1,5 +1,6 @@
 'use client'
 
+import { productsAPI } from '@/lib/api'
 import { Product } from '@/types'
 import { useEffect, useState } from 'react'
 import { ProductCard } from './product-card'
@@ -250,6 +251,9 @@ export function ProductGrid({
   sortBy = 'newest',
   onFavoritesCountChange
 }: ProductGridProps) {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<string[]>([])
 
   // Получаем избранные товары из localStorage
@@ -257,6 +261,41 @@ export function ProductGrid({
     if (typeof window === 'undefined') return []
     return JSON.parse(localStorage.getItem('favorites') || '[]')
   }
+
+  // Загружаем товары с сервера
+  const loadProducts = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const params = {
+        search: searchQuery || undefined,
+        category: category !== 'all' ? category : undefined,
+        minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+        maxPrice: priceRange.max > 0 ? priceRange.max : undefined,
+        sortBy: sortBy === 'newest' ? 'date' : sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? 'price' : 'rating',
+        sortOrder: sortBy === 'price-high' ? 'desc' : 'asc',
+        limit: 50,
+        offset: 0
+      }
+
+      const response = await productsAPI.getProducts(params)
+      const productsData = response.data.data || response.data
+      setProducts(Array.isArray(productsData) ? productsData : [])
+    } catch (err: any) {
+      console.error('Ошибка загрузки товаров:', err)
+      setError(err.response?.data?.message || 'Ошибка загрузки товаров')
+      // Fallback на моковые данные при ошибке
+      setProducts(mockProducts)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Загружаем товары при изменении параметров
+  useEffect(() => {
+    loadProducts()
+  }, [searchQuery, category, priceRange, sortBy])
 
   // Загружаем избранное при монтировании компонента
   useEffect(() => {
@@ -303,38 +342,43 @@ export function ProductGrid({
     }
   }, [favorites.length, onFavoritesCountChange])
 
-  // Фильтрация товаров
-  let filteredProducts = mockProducts.filter((product) => {
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesCategory = category === 'all' || product.category === category
-
+  // Фильтрация товаров (дополнительная фильтрация на клиенте для избранного)
+  let filteredProducts = products.filter((product) => {
     // Проверяем избранное из состояния
     const isInFavorites = favorites.includes(product.id)
     const matchesFavorites = !showFavorites || isInFavorites || product.isFavorite
 
-    const matchesPriceRange = (priceRange.min === 0 && priceRange.max === 0) || 
-                             (product.price >= priceRange.min && 
-                              (priceRange.max === 0 || product.price <= priceRange.max))
-
-    return matchesSearch && matchesCategory && matchesFavorites && matchesPriceRange
+    return matchesFavorites
   })
 
-  // Сортировка товаров
-  filteredProducts.sort((a, b) => {
-    switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price
-      case 'price-high':
-        return b.price - a.price
-      case 'rating':
-        return b.rating - a.rating
-      case 'newest':
-      default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    }
-  })
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <p className="text-gray-600">Загрузка товаров...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="text-red-400 mb-4">
+          <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Ошибка загрузки</h3>
+        <p className="text-gray-500 text-center mb-4">{error}</p>
+        <button
+          onClick={loadProducts}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Попробовать снова
+        </button>
+      </div>
+    )
+  }
 
   if (filteredProducts.length === 0) {
     return (

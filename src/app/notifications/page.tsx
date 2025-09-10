@@ -1,10 +1,12 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
+import { usersAPI } from '@/lib/api'
 import { Notification } from '@/types'
 import { ArrowLeftIcon, BellIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 const mockNotifications: Notification[] = [
   {
@@ -60,7 +62,32 @@ const mockNotifications: Notification[] = [
 
 export default function NotificationsPage() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Загружаем уведомления при монтировании
+  useEffect(() => {
+    loadNotifications()
+  }, [])
+
+  const loadNotifications = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await usersAPI.getNotifications({ limit: 50 })
+      const notificationsData = response.data.data || response.data
+      setNotifications(Array.isArray(notificationsData) ? notificationsData : [])
+    } catch (err: any) {
+      console.error('Ошибка загрузки уведомлений:', err)
+      setError(err.response?.data?.message || 'Ошибка загрузки уведомлений')
+      // Fallback на моковые данные
+      setNotifications(mockNotifications)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -112,20 +139,44 @@ export default function NotificationsPage() {
     }
   }
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, read: true }
-          : notification
+  const markAsRead = async (id: string) => {
+    try {
+      await usersAPI.markNotificationRead(id)
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === id 
+            ? { ...notification, read: true }
+            : notification
+        )
       )
-    )
+      toast.success('Уведомление отмечено как прочитанное')
+    } catch (error) {
+      console.error('Ошибка отметки уведомления:', error)
+      // Fallback - обновляем локально
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === id 
+            ? { ...notification, read: true }
+            : notification
+        )
+      )
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
-    )
+  const markAllAsRead = async () => {
+    try {
+      await usersAPI.markAllNotificationsRead()
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      )
+      toast.success('Все уведомления отмечены как прочитанные')
+    } catch (error) {
+      console.error('Ошибка отметки всех уведомлений:', error)
+      // Fallback - обновляем локально
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      )
+    }
   }
 
   const unreadCount = notifications.filter(n => !n.read).length

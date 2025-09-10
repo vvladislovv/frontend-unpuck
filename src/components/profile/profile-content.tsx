@@ -1,7 +1,7 @@
 'use client'
 
 import { User } from '@/types'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { OtherSection } from './other-section'
 import { ProfileSection } from './profile-section'
 import { ToolsSection } from './tools-section'
@@ -20,8 +20,38 @@ const mockUser: User = {
   updatedAt: '2024-01-18T12:00:00Z',
 }
 
-export function ProfileContent() {
-  const [user] = useState<User>(mockUser)
+interface ProfileContentProps {
+  userData?: any
+  isLoading?: boolean
+  theme?: 'light' | 'dark'
+  onHaptic?: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void
+}
+
+export function ProfileContent({ userData, isLoading, theme, onHaptic }: ProfileContentProps) {
+  const [user, setUser] = useState<User>(mockUser)
+
+  useEffect(() => {
+    if (userData) {
+      // Преобразуем данные из Telegram в формат User
+      const telegramUser: User = {
+        id: userData.id?.toString() || '1',
+        name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'Telegram User',
+        email: userData.email || `${userData.username || userData.id}@telegram.user`,
+        phone: userData.phone || '+7 (999) 123-45-67',
+        avatar: userData.photoUrl || '/api/placeholder/80/80',
+        bio: userData.bio || 'Пользователь Telegram',
+        role: 'buyer',
+        verified: userData.isPremium || false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      setUser(telegramUser)
+    }
+  }, [userData])
+
+  const handleClick = () => {
+    onHaptic?.('light')
+  }
 
   return (
     <div className="min-h-screen bg-white">

@@ -1,9 +1,11 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
+import { supportAPI } from '@/lib/api'
 import { ArrowLeftIcon, CheckCircleIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface Message {
   id: number
@@ -17,19 +19,65 @@ export default function SupportPage() {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now(),
-        text: message,
-        isUser: true,
-        timestamp: new Date()
-      }
+  // Загружаем сообщения при монтировании
+  useEffect(() => {
+    loadMessages()
+  }, [])
+
+  const loadMessages = async () => {
+    try {
+      setLoading(true)
+      setError(null)
       
-      setMessages(prev => [...prev, newMessage])
-      setMessage('')
-      setIsLoading(true)
+      const response = await supportAPI.getMessages({ limit: 50 })
+      const messagesData = response.data.data || response.data
+      const messagesArray = Array.isArray(messagesData) ? messagesData : []
+      
+      // Преобразуем в формат для отображения
+      const formattedMessages = messagesArray.map((msg: any) => ({
+        id: msg.id,
+        text: msg.message,
+        isUser: msg.isUser || false,
+        timestamp: new Date(msg.createdAt)
+      }))
+      
+      setMessages(formattedMessages)
+    } catch (err: any) {
+      console.error('Ошибка загрузки сообщений:', err)
+      setError(err.response?.data?.message || 'Ошибка загрузки сообщений')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return
+    
+    const newMessage: Message = {
+      id: Date.now(),
+      text: message,
+      isUser: true,
+      timestamp: new Date()
+    }
+    
+    setMessages(prev => [...prev, newMessage])
+    const messageText = message
+    setMessage('')
+    setIsLoading(true)
+    
+    try {
+      // Отправляем сообщение через API
+      await supportAPI.sendMessage({
+        subject: 'Сообщение в поддержку',
+        message: messageText,
+        type: 'support',
+        priority: 'medium'
+      })
+      
+      toast.success('Сообщение отправлено!')
       
       // Симуляция ответа поддержки
       setTimeout(() => {
@@ -42,6 +90,10 @@ export default function SupportPage() {
         setMessages(prev => [...prev, response])
         setIsLoading(false)
       }, 2000)
+    } catch (error) {
+      console.error('Ошибка отправки сообщения:', error)
+      toast.error('Ошибка отправки сообщения')
+      setIsLoading(false)
     }
   }
 
