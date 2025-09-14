@@ -42,7 +42,8 @@ export const api = axios.create({
 // Request interceptor to add auth token and check cache
 api.interceptors.request.use(
   (config) => {
-    console.log('🌐 Making request to:', config.baseURL + config.url);
+    console.log('🌐 Making request to:', (config.baseURL || '') + config.url);
+    console.log('📋 Request method:', config.method?.toUpperCase());
     
     // Получаем токен из глобального менеджера
     const token = tokenManager.getToken()
@@ -52,6 +53,23 @@ api.interceptors.request.use(
       console.log('🔑 Токен добавлен в запрос:', token.substring(0, 20) + '...')
     } else {
       console.log('⚠️ Токен не найден для запроса:', config.url)
+      console.log('🔍 Попытка автоматической авторизации...')
+      
+      // Попробуем авторизоваться автоматически
+      tokenManager.autoAuth().then(authResult => {
+        if (authResult) {
+          console.log('✅ Автоматическая авторизация успешна, повторяем запрос')
+          // Повторяем запрос с токеном
+          const newToken = tokenManager.getToken()
+          if (newToken) {
+            config.headers.Authorization = `Bearer ${newToken}`
+          }
+        } else {
+          console.log('❌ Автоматическая авторизация не удалась')
+        }
+      }).catch(error => {
+        console.log('❌ Ошибка автоматической авторизации:', error)
+      })
     }
     
     // Проверяем кэш для GET запросов
@@ -59,6 +77,7 @@ api.interceptors.request.use(
       const cacheKey = `${config.url}?${JSON.stringify(config.params || {})}`
       const cachedData = getCachedData(cacheKey)
       if (cachedData) {
+        console.log('💾 Используем кэшированные данные для:', config.url)
         // Возвращаем кэшированные данные
         return Promise.resolve({
           ...config,
@@ -71,6 +90,7 @@ api.interceptors.request.use(
     return config
   },
   (error) => {
+    console.log('❌ Ошибка в request interceptor:', error)
     return Promise.reject(error)
   }
 )
@@ -385,7 +405,9 @@ export const adminAPI = {
     offset?: number
   }) => api.get('/admin/messages', { params }),
   
-  replyToMessage: (messageId: string, data: { reply: string }) =>
+  getChatMessages: () => api.get('/admin/chat-messages'),
+  
+  replyToMessage: (messageId: string, data: { content: string }) =>
     api.post(`/admin/messages/${messageId}/reply`, data),
   
   getUsers: (params?: {
@@ -395,6 +417,16 @@ export const adminAPI = {
     limit?: number
     offset?: number
   }) => api.get('/admin/users', { params }),
+  
+  createUser: (data: {
+    firstName: string
+    lastName: string
+    email: string
+    phone?: string
+    role: string
+    password?: string
+    verified?: boolean
+  }) => api.post('/admin/users', data),
   
   updateUser: (userId: string, data: Partial<{
     firstName: string
@@ -420,6 +452,16 @@ export const adminAPI = {
     offset?: number
   }) => api.get('/admin/products', { params }),
   
+  createProduct: (data: {
+    title: string
+    description: string
+    price: number
+    category: string
+    wbArticle: string
+    images?: string[]
+    isActive?: boolean
+  }) => api.post('/admin/products', data),
+  
   updateProduct: (productId: string, data: Partial<{
     title: string
     description: string
@@ -438,8 +480,22 @@ export const adminAPI = {
     offset?: number
   }) => api.get('/admin/deals', { params }),
   
-  updateDealStatus: (dealId: string, data: { status: string; notes?: string }) =>
-    api.put(`/admin/deals/${dealId}/status`, data),
+  updateDealStatus: (dealId: string, status: string | { status: string }) => {
+    const statusValue = typeof status === 'string' ? status : status.status
+    return api.put(`/admin/deals/${dealId}/status`, { status: statusValue })
+  },
+  
+  closeDeal: (dealId: string) =>
+    api.post(`/admin/deals/${dealId}/close`),
+  
+  openDeal: (dealId: string) =>
+    api.post(`/admin/deals/${dealId}/open`),
+  
+  cancelDeal: (dealId: string) =>
+    api.post(`/admin/deals/${dealId}/cancel`),
+  
+  disputeDeal: (dealId: string) =>
+    api.post(`/admin/deals/${dealId}/dispute`),
   
   resolveDispute: (dealId: string, data: { resolution: string; refundAmount?: number }) =>
     api.post(`/admin/deals/${dealId}/resolve-dispute`, data),
@@ -686,4 +742,8 @@ export const telegramAPI = {
   }) => api.put(`/social/links/${linkId}`, data),
   
   deleteSocialLink: (linkId: string) => api.delete(`/social/links/${linkId}`),
+  
+  verifyTelegram: (telegramId: string, data: {
+    photoUrl?: string
+  }) => api.post(`/telegram/verify/${telegramId}`, data),
 }

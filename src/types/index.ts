@@ -20,6 +20,7 @@ export interface Product {
   originalPrice?: number
   category: string
   subcategory?: string
+  wbArticle?: string
   images: string[]
   rating: number
   reviewsCount: number
@@ -36,7 +37,7 @@ export interface Product {
   isFavorite?: boolean
 }
 
-export type DealStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'DISPUTED'
+export type DealStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED'
 
 export interface Deal {
   id: string
@@ -152,6 +153,36 @@ export interface AdminMessage {
   updatedAt: string
 }
 
+export interface ChatMessage {
+  id: string
+  content: string
+  type: 'TEXT' | 'IMAGE' | 'FILE'
+  sender: {
+    id: string
+    username: string
+    firstName: string
+    lastName: string
+    avatar?: string
+  }
+  chat: {
+    id: string
+    type: 'ADMIN_CHAT' | 'USER_CHAT'
+    participants: {
+      id: string
+      username: string
+      firstName: string
+      lastName: string
+    }[]
+  }
+  metadata?: {
+    isFromAdmin?: boolean
+    replyTo?: string
+    adminReply?: boolean
+  }
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AdminStats {
   totalUsers: number
   totalProducts: number
@@ -177,6 +208,36 @@ export interface AdminUser extends User {
 export type TabType = 'catalog' | 'deals' | 'profile' | 'admin'
 
 // Состояние приложения
+export interface AppState {
+  currentTab: TabType
+  user: User | null
+  products: Product[]
+  deals: Deal[]
+  categories: Category[]
+  notifications: Notification[]
+  searchFilters: SearchFilters
+  loading: boolean
+  error: string | null
+}
+
+// API ответы
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+  error?: string
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 export interface AppState {
   currentTab: TabType
   user: User | null

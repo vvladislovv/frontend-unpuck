@@ -2,7 +2,7 @@
 
 import { MainLayout } from '@/components/layouts/main-layout'
 import { affiliateAPI } from '@/lib/api'
-import { ArrowLeftIcon, CopyIcon, ShareIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, DocumentDuplicateIcon, ShareIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -143,7 +143,7 @@ export default function AffiliatePage() {
                 onClick={copyReferralCode}
                 className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <CopyIcon className="h-5 w-5" />
+                <DocumentDuplicateIcon className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -162,7 +162,7 @@ export default function AffiliatePage() {
                   onClick={copyReferralLink}
                   className="p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                 >
-                  <CopyIcon className="h-5 w-5" />
+                  <DocumentDuplicateIcon className="h-5 w-5" />
                 </button>
               </div>
               <button
@@ -213,4 +213,7 @@ export default function AffiliatePage() {
     </MainLayout>
   )
 }
+
+
+
 

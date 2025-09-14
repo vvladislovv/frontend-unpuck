@@ -10,10 +10,12 @@ interface ProductCardProps {
   product: Product
   viewMode: 'grid' | 'list'
   priority?: boolean
+  isFavorite?: boolean
+  onToggleFavorite?: (productId: string) => void
 }
 
-export function ProductCard({ product, viewMode, priority = false }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false)
+export function ProductCard({ product, viewMode, priority = false, isFavorite: propIsFavorite, onToggleFavorite }: ProductCardProps) {
+  const [isFavorite, setIsFavorite] = useState(propIsFavorite || false)
 
   // Синхронизируем состояние с localStorage
   useEffect(() => {
@@ -47,6 +49,11 @@ export function ProductCard({ product, viewMode, priority = false }: ProductCard
     e.preventDefault()
     const newFavoriteState = !isFavorite
     setIsFavorite(newFavoriteState)
+    
+    // Вызываем переданный колбэк, если он есть
+    if (onToggleFavorite) {
+      onToggleFavorite(product.id)
+    }
     
     // Сохраняем в localStorage
     const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]')
@@ -85,12 +92,12 @@ export function ProductCard({ product, viewMode, priority = false }: ProductCard
     >
       <div className="relative aspect-square overflow-hidden rounded-t-xl">
         <Image
-          src={product.images[0]}
+          src={product.images?.[0] || '/avatars/default.jpg'}
           alt={product.title}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-200"
           sizes="(max-width: 768px) 50vw, 25vw"
-          priority={true}
+          priority={priority}
         />
         
         {/* Теги */}

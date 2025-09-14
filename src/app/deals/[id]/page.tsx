@@ -25,6 +25,12 @@ const mockDeals: Deal[] = [
       images: ['/api/placeholder/300/300'],
       rating: 4.5,
       reviewsCount: 23,
+      seller: {
+        id: '1',
+        name: 'KitchenPro',
+        avatar: '/api/placeholder/40/40',
+        verified: true
+      },
       inStock: true,
       tags: ['новинка', 'скидка'],
       createdAt: '2024-01-15',
@@ -70,6 +76,12 @@ const mockDeals: Deal[] = [
       images: ['/api/placeholder/300/300'],
       rating: 4.8,
       reviewsCount: 156,
+      seller: {
+        id: '2',
+        name: 'BeautyStore',
+        avatar: '/api/placeholder/40/40',
+        verified: true
+      },
       inStock: true,
       tags: ['новинка', 'хит'],
       createdAt: '2024-01-14',
@@ -94,7 +106,7 @@ const mockDeals: Deal[] = [
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     },
-    status: 'DELIVERED',
+    status: 'COMPLETED',
     quantity: 2,
     totalPrice: 1780,
     paymentMethod: 'wallet',
@@ -112,6 +124,12 @@ const mockDeals: Deal[] = [
       images: ['/api/placeholder/300/300'],
       rating: 4.2,
       reviewsCount: 89,
+      seller: {
+        id: '2',
+        name: 'BeautyStore',
+        avatar: '/api/placeholder/40/40',
+        verified: true
+      },
       inStock: true,
       tags: ['популярное'],
       createdAt: '2024-01-13',
@@ -173,7 +191,7 @@ const statusConfig: Record<DealStatus, {
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
   },
-  DELIVERED: {
+  COMPLETED: {
     label: 'Доставлено',
     icon: '✅',
     color: 'text-green-600 bg-green-50',

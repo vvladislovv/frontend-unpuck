@@ -15,84 +15,10 @@ import {
 } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 
-// Моковые данные пользователей
-const mockUsers: AdminUser[] = [
-  {
-    id: '1',
-    name: 'Анна Петрова',
-    email: 'anna.petrova@email.com',
-    phone: '+7 (999) 123-45-67',
-    avatar: '/avatars/user1.jpg',
-    bio: 'Продавец одежды и аксессуаров',
-    role: 'seller',
-    verified: true,
-    createdAt: '2024-01-01T10:00:00Z',
-    updatedAt: '2024-01-15T14:30:00Z',
-    lastLogin: '2024-01-15T14:30:00Z',
-    totalSpent: 45670,
-    totalEarned: 123400,
-    dealsCount: 45,
-    productsCount: 23,
-    isBlocked: false,
-  },
-  {
-    id: '2',
-    name: 'Михаил Иванов',
-    email: 'mikhail.ivanov@email.com',
-    phone: '+7 (999) 234-56-78',
-    avatar: '/avatars/user2.jpg',
-    bio: 'Блогер о технологиях',
-    role: 'blogger',
-    verified: true,
-    createdAt: '2024-01-05T12:00:00Z',
-    updatedAt: '2024-01-14T09:15:00Z',
-    lastLogin: '2024-01-14T09:15:00Z',
-    totalSpent: 23400,
-    totalEarned: 67800,
-    dealsCount: 12,
-    productsCount: 0,
-    isBlocked: false,
-  },
-  {
-    id: '3',
-    name: 'Елена Смирнова',
-    email: 'elena.smirnova@email.com',
-    phone: '+7 (999) 345-67-89',
-    avatar: '/avatars/user3.jpg',
-    bio: 'Покупатель',
-    role: 'buyer',
-    verified: false,
-    createdAt: '2024-01-10T16:20:00Z',
-    updatedAt: '2024-01-16T11:45:00Z',
-    lastLogin: '2024-01-16T11:45:00Z',
-    totalSpent: 15600,
-    totalEarned: 0,
-    dealsCount: 8,
-    productsCount: 0,
-    isBlocked: false,
-  },
-  {
-    id: '4',
-    name: 'Дмитрий Козлов',
-    email: 'dmitry.kozlov@email.com',
-    phone: '+7 (999) 456-78-90',
-    avatar: '/avatars/user4.jpg',
-    bio: 'Продавец электроники',
-    role: 'seller',
-    verified: true,
-    createdAt: '2024-01-08T14:00:00Z',
-    updatedAt: '2024-01-12T10:30:00Z',
-    lastLogin: '2024-01-12T10:30:00Z',
-    totalSpent: 8900,
-    totalEarned: 234500,
-    dealsCount: 67,
-    productsCount: 45,
-    isBlocked: true,
-    blockReason: 'Нарушение правил платформы',
-  },
-]
+// Компонент для управления пользователями
 
 interface UserManagementProps {
+  users: AdminUser[]
   onEditUser: (user: AdminUser) => void
   onBlockUser: (userId: string, reason: string) => void
   onUnblockUser: (userId: string) => void
@@ -102,12 +28,13 @@ interface UserManagementProps {
 }
 
 export function UserManagement({ 
+  users,
   onEditUser, 
   onBlockUser, 
   onUnblockUser, 
   onVerifyUser, 
-  onViewUser,
-  onCreateUser
+  onViewUser, 
+  onCreateUser 
 }: UserManagementProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedRole, setSelectedRole] = useState('all')
@@ -130,7 +57,7 @@ export function UserManagement({
     { value: 'blocked', label: 'Заблокированные' },
   ]
 
-  const filteredUsers = mockUsers.filter(user => {
+  const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.phone?.includes(searchQuery)
@@ -184,7 +111,7 @@ export function UserManagement({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Управление пользователями</h2>
-          <p className="text-gray-600">Всего пользователей: {mockUsers.length}</p>
+          <p className="text-gray-600">Всего пользователей: {users.length}</p>
         </div>
         <Button className="w-full sm:w-auto" onClick={onCreateUser}>
           <UserPlusIcon className="h-4 w-4 mr-2" />

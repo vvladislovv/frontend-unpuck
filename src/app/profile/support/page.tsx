@@ -1,143 +1,164 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
-import { profileAPI } from '@/lib/api'
-import { ArrowLeftIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { chatAPI } from '@/lib/api'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 
-interface SupportTicket {
+interface ChatMessage {
   id: string
-  subject: string
-  message: string
-  priority: 'LOW' | 'MEDIUM' | 'HIGH'
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
-  createdAt: string
-  updatedAt: string
+  text: string
+  sender: 'user' | 'admin'
+  timestamp: string
+  isRead: boolean
 }
 
 export default function SupportPage() {
-  const [tickets, setTickets] = useState<SupportTicket[]>([])
+  // Чат состояние
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [newMessage, setNewMessage] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newTicket, setNewTicket] = useState({
-    subject: '',
-    message: '',
-    priority: 'MEDIUM' as 'LOW' | 'MEDIUM' | 'HIGH'
-  })
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
+  // Загрузка сообщений из БД
   useEffect(() => {
-    loadSupportTickets()
+    loadChatMessages()
   }, [])
 
-  const loadSupportTickets = async () => {
+  // Автоскролл к последнему сообщению
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages, isTyping])
+
+  const loadChatMessages = async () => {
     try {
       setIsLoading(true)
-      const response = await profileAPI.getSupportTickets()
+      const response = await chatAPI.getAdminChat()
       if (response.data) {
-        setTickets(response.data.data || response.data)
+        const messages = response.data.messages || response.data
+        
+        setChatMessages(messages.map((msg: any) => {
+          // Логика определения отправителя
+          // Если есть metadata.isFromAdmin, то это сообщение от админа
+          const isAdmin = msg.metadata && msg.metadata.isFromAdmin
+          
+          return {
+            id: msg.id,
+            text: msg.content || msg.text,
+            sender: isAdmin ? 'admin' : 'user',
+            timestamp: msg.createdAt || msg.timestamp,
+            isRead: true
+          }
+        }))
       }
     } catch (error: any) {
-      console.error('Ошибка загрузки тикетов поддержки:', error)
-      // Используем моковые данные
-      setTickets([
+      console.error('Ошибка загрузки сообщений:', error)
+      // Используем демо данные если БД недоступна
+      setChatMessages([
         {
           id: '1',
-          subject: 'Проблема с оплатой',
-          message: 'Не могу оплатить заказ',
-          priority: 'HIGH',
-          status: 'OPEN',
-          createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-01-15T10:30:00Z'
+          text: 'Добро пожаловать! Чем могу помочь?',
+          sender: 'admin',
+          timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+          isRead: true
         },
         {
           id: '2',
-          subject: 'Предложение по улучшению',
-          message: 'Хотелось бы видеть больше фильтров в каталоге',
-          priority: 'LOW',
-          status: 'RESOLVED',
-          createdAt: '2024-01-10T14:20:00Z',
-          updatedAt: '2024-01-12T16:45:00Z'
+          text: 'Привет! У меня проблема с оплатой заказа',
+          sender: 'user',
+          timestamp: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
+          isRead: true
+        },
+        {
+          id: '3',
+          text: 'Понимаю. Расскажите подробнее, какой именно заказ и что происходит при попытке оплаты?',
+          sender: 'admin',
+          timestamp: new Date(Date.now() - 30 * 1000).toISOString(),
+          isRead: true
         }
       ])
-      toast.error('Не удалось загрузить тикеты поддержки. Показаны демонстрационные данные.')
+      toast.error('Не удалось загрузить сообщения. Показаны демонстрационные данные.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCreateTicket = async (e: React.FormEvent) => {
+  // Функции для чата
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    if (!newMessage.trim()) return
+
+    const messageText = newMessage.trim()
+    setNewMessage('')
+    setIsTyping(true)
+
     try {
-      const response = await profileAPI.createSupportTicket(newTicket)
+      // Отправляем сообщение в БД
+      const response = await chatAPI.sendMessageToAdmin(messageText)
+      
       if (response.data) {
-        setTickets(prev => [response.data.data || response.data, ...prev])
-        setNewTicket({ subject: '', message: '', priority: 'MEDIUM' })
-        setShowCreateForm(false)
-        toast.success('Тикет создан! Мы ответим в ближайшее время.')
+        // Добавляем сообщение пользователя в чат
+        const userMessage: ChatMessage = {
+          id: response.data.id || Date.now().toString(),
+          text: messageText,
+          sender: 'user',
+          timestamp: response.data.createdAt || new Date().toISOString(),
+          isRead: true
+        }
+
+        setChatMessages(prev => [...prev, userMessage])
+        
+        // Симулируем ответ админа (в реальном приложении это будет webhook или polling)
+        setTimeout(() => {
+          const adminResponses = [
+            'Понял, разбираюсь с вашей проблемой...',
+            'Спасибо за информацию! Проверяю данные.',
+            'Хорошо, я передам это в техническую поддержку.',
+            'Понятно, сейчас посмотрю что можно сделать.',
+            'Отлично! Я уже работаю над решением вашего вопроса.'
+          ]
+          
+          const randomResponse = adminResponses[Math.floor(Math.random() * adminResponses.length)]
+          
+          const adminMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            text: randomResponse,
+            sender: 'admin',
+            timestamp: new Date().toISOString(),
+            isRead: true
+          }
+
+          setChatMessages(prev => [...prev, adminMessage])
+          setIsTyping(false)
+        }, 1500)
       }
     } catch (error: any) {
-      console.error('Ошибка создания тикета:', error)
-      toast.error('Не удалось создать тикет')
+      console.error('Ошибка отправки сообщения:', error)
+      toast.error('Не удалось отправить сообщение')
+      setIsTyping(false)
+      
+      // Добавляем сообщение локально если БД недоступна
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        text: messageText,
+        sender: 'user',
+        timestamp: new Date().toISOString(),
+        isRead: true
+      }
+
+      setChatMessages(prev => [...prev, userMessage])
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'OPEN':
-        return 'text-red-600 bg-red-50'
-      case 'IN_PROGRESS':
-        return 'text-yellow-600 bg-yellow-50'
-      case 'RESOLVED':
-        return 'text-green-600 bg-green-50'
-      case 'CLOSED':
-        return 'text-gray-600 bg-gray-50'
-      default:
-        return 'text-gray-600 bg-gray-50'
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'OPEN':
-        return 'Открыт'
-      case 'IN_PROGRESS':
-        return 'В работе'
-      case 'RESOLVED':
-        return 'Решен'
-      case 'CLOSED':
-        return 'Закрыт'
-      default:
-        return status
-    }
-  }
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'LOW':
-        return 'Низкий'
-      case 'MEDIUM':
-        return 'Средний'
-      case 'HIGH':
-        return 'Высокий'
-      default:
-        return priority
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Загрузка...</p>
-          </div>
-        </div>
-      </MainLayout>
-    )
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString('ru-RU', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    })
   }
 
   return (
@@ -156,126 +177,102 @@ export default function SupportPage() {
           </div>
         </div>
 
-        <div className="px-4 py-6 space-y-6">
-          {/* Create Ticket Button */}
-          {!showCreateForm && (
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="w-full flex items-center justify-center space-x-2 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <PlusIcon className="h-5 w-5" />
-              <span>Создать обращение</span>
-            </button>
-          )}
-
-          {/* Create Ticket Form */}
-          {showCreateForm && (
-            <form onSubmit={handleCreateTicket} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">Создать обращение</h3>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Приоритет
-                </label>
-                <select
-                  value={newTicket.priority}
-                  onChange={(e) => setNewTicket(prev => ({ ...prev, priority: e.target.value as any }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="LOW">Низкий</option>
-                  <option value="MEDIUM">Средний</option>
-                  <option value="HIGH">Высокий</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Тема
-                </label>
-                <input
-                  type="text"
-                  value={newTicket.subject}
-                  onChange={(e) => setNewTicket(prev => ({ ...prev, subject: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Кратко опишите проблему"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Сообщение
-                </label>
-                <textarea
-                  value={newTicket.message}
-                  onChange={(e) => setNewTicket(prev => ({ ...prev, message: e.target.value }))}
-                  required
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Подробно опишите вашу проблему или предложение"
-                />
-              </div>
-
-              <div className="flex space-x-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Отправить
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Отмена
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Tickets List */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Ваши обращения</h3>
-            {tickets.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">У вас пока нет обращений</p>
+        {/* Чат на весь экран */}
+        <div className="flex flex-col h-[calc(100vh-80px)]">
+          {/* Заголовок чата */}
+          <div className="px-4 py-3 border-b border-gray-200 bg-white">
+            <h3 className="text-lg font-medium text-gray-900">Онлайн чат с поддержкой</h3>
+            <p className="text-sm text-gray-500">Обычно отвечаем в течение 5 минут</p>
+          </div>
+          
+          {/* Сообщения чата */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Загрузка сообщений...</p>
+                </div>
               </div>
             ) : (
-              tickets.map((ticket) => (
-                <div key={ticket.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-medium text-gray-900">{ticket.subject}</h4>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
-                          {getStatusText(ticket.status)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 mb-2">Приоритет: {getPriorityText(ticket.priority)}</p>
-                      <p className="text-sm text-gray-600 mb-2">{ticket.message}</p>
-                      <p className="text-xs text-gray-400">
-                        Создано: {new Date(ticket.createdAt).toLocaleDateString('ru-RU')}
-                      </p>
+              chatMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className="max-w-xs lg:max-w-md">
+                    {/* Подпись отправителя */}
+                    <div className={`text-xs text-gray-500 mb-1 ${
+                      message.sender === 'user' ? 'text-right' : 'text-left'
+                    }`}>
+                      {message.sender === 'user' ? 'Вы' : 'Админ'}
                     </div>
+                    
+                    {/* Сообщение */}
+                    <div
+                      className={`px-4 py-2 rounded-lg ${
+                        message.sender === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-900 shadow-sm'
+                      }`}
+                    >
+                      <p className="text-sm">{message.text}</p>
+                    </div>
+                    
+                    {/* Время */}
+                    <p className={`text-xs mt-1 text-gray-500 ${
+                      message.sender === 'user' ? 'text-right' : 'text-left'
+                    }`}>
+                      {formatTime(message.timestamp)}
+                    </p>
                   </div>
                 </div>
               ))
             )}
+            
+            {/* Индикатор печати */}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="max-w-xs lg:max-w-md">
+                  <div className="text-xs text-gray-500 mb-1 text-left">
+                    Админ печатает...
+                  </div>
+                  <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-sm">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
-
-          {/* Contact Info */}
-          <div className="bg-blue-50 rounded-lg p-6">
-            <h3 className="text-lg font-medium text-blue-900 mb-4">Контакты поддержки</h3>
-            <div className="space-y-2 text-sm text-blue-800">
-              <p><strong>Email:</strong> support@unpacksbot.com</p>
-              <p><strong>Telegram:</strong> @unpacksbot_support</p>
-              <p><strong>Время работы:</strong> 9:00 - 21:00 (МСК)</p>
-            </div>
+          
+          {/* Форма отправки сообщения */}
+          <div className="p-4 bg-white border-t border-gray-200">
+            <form onSubmit={handleSendMessage} className="flex space-x-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Напишите сообщение..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+              <button
+                type="submit"
+                disabled={!newMessage.trim()}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+              </button>
+            </form>
           </div>
         </div>
       </div>
     </MainLayout>
   )
 }
-

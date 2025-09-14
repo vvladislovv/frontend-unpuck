@@ -224,7 +224,7 @@ export function ProductGrid({
         <h3 className="text-lg font-medium text-gray-900 mb-2">Ошибка загрузки</h3>
         <p className="text-gray-500 text-center mb-4">{error}</p>
         <button
-          onClick={loadProducts}
+          onClick={() => loadProducts()}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Попробовать снова

@@ -14,83 +14,16 @@ import {
 } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 
-// Моковые данные товаров
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    title: 'Кроссовки Nike Air Max 270',
-    description: 'Стильные и удобные кроссовки для повседневной носки',
-    price: 8999,
-    originalPrice: 12999,
-    category: 'Обувь',
-    subcategory: 'Кроссовки',
-    images: ['/products/nike1.jpg', '/products/nike2.jpg'],
-    rating: 4.8,
-    reviewsCount: 156,
-    seller: {
-      id: 'seller1',
-      name: 'СпортМир',
-      avatar: '/avatars/seller1.jpg',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['nike', 'кроссовки', 'спорт'],
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-15T14:30:00Z',
-  },
-  {
-    id: '2',
-    title: 'Платье летнее в цветочек',
-    description: 'Легкое платье из хлопка для жаркой погоды',
-    price: 2499,
-    category: 'Одежда',
-    subcategory: 'Платья',
-    images: ['/products/dress1.jpg'],
-    rating: 4.5,
-    reviewsCount: 89,
-    seller: {
-      id: 'seller2',
-      name: 'Модный стиль',
-      avatar: '/avatars/seller2.jpg',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['платье', 'лето', 'хлопок'],
-    createdAt: '2024-01-12T16:20:00Z',
-    updatedAt: '2024-01-14T09:15:00Z',
-  },
-  {
-    id: '3',
-    title: 'Смартфон iPhone 14',
-    description: 'Новейший iPhone с отличной камерой',
-    price: 89999,
-    originalPrice: 99999,
-    category: 'Электроника',
-    subcategory: 'Телефоны',
-    images: ['/products/iphone1.jpg', '/products/iphone2.jpg'],
-    rating: 4.9,
-    reviewsCount: 234,
-    seller: {
-      id: 'seller3',
-      name: 'ТехноМир',
-      avatar: '/avatars/seller3.jpg',
-      verified: true,
-    },
-    inStock: false,
-    tags: ['iphone', 'смартфон', 'apple'],
-    createdAt: '2024-01-08T12:00:00Z',
-    updatedAt: '2024-01-16T11:45:00Z',
-  },
-]
 
 interface ProductManagementProps {
+  products: Product[]
   onEditProduct: (product: Product) => void
   onDeleteProduct: (productId: string) => void
   onViewProduct: (product: Product) => void
   onCreateProduct: () => void
 }
 
-export function ProductManagement({ onEditProduct, onDeleteProduct, onViewProduct, onCreateProduct }: ProductManagementProps) {
+export function ProductManagement({ products, onEditProduct, onDeleteProduct, onViewProduct, onCreateProduct }: ProductManagementProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('date')
@@ -98,7 +31,7 @@ export function ProductManagement({ onEditProduct, onDeleteProduct, onViewProduc
 
   const categories = ['all', 'Одежда', 'Обувь', 'Электроника', 'Красота', 'Дом']
 
-  const filteredProducts = mockProducts.filter(product => {
+  const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory
@@ -125,7 +58,7 @@ export function ProductManagement({ onEditProduct, onDeleteProduct, onViewProduc
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Управление товарами</h2>
-          <p className="text-gray-600">Всего товаров: {mockProducts.length}</p>
+          <p className="text-gray-600">Всего товаров: {products.length}</p>
         </div>
         <Button className="w-full sm:w-auto" onClick={onCreateProduct}>
           <PlusIcon className="h-4 w-4 mr-2" />

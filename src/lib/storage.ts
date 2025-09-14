@@ -67,7 +67,7 @@ const dealConfig: Record<string, boolean> = {
   'PENDING': true,
   'CONFIRMED': true,
   'SHIPPED': true,
-  'DELIVERED': true,
+  'COMPLETED': true,
   'CANCELLED': true,
   'DISPUTED': true,
 }

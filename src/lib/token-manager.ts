@@ -129,18 +129,24 @@ class TokenManager {
 
   // Автоматическая авторизация
   public async autoAuth(): Promise<{ user: any; token: string } | null> {
-    // Сначала проверяем существующий токен
-    if (this.isAuthenticated()) {
-      const isValid = await this.validateToken()
-      if (isValid) {
-        console.log('🔐 Автоматическая авторизация через существующий токен')
-        return { user: this.user, token: this.token! }
-      }
-    }
-
-    // Если токен невалиден, пробуем войти с тестовым пользователем
     try {
-      console.log('🔐 Попытка входа с тестовым пользователем...')
+      console.log('🔐 Попытка автоматической авторизации...')
+      
+      // Сначала проверяем существующий токен
+      if (this.isAuthenticated()) {
+        console.log('🔑 Найден существующий токен, проверяем валидность...')
+        const isValid = await this.validateToken()
+        if (isValid) {
+          console.log('✅ Автоматическая авторизация через существующий токен')
+          return { user: this.user, token: this.token! }
+        } else {
+          console.log('❌ Существующий токен невалиден, очищаем...')
+          this.clearAuth()
+        }
+      }
+
+      // Если токен невалиден или отсутствует, пробуем войти с админ пользователем
+      console.log('🔐 Попытка входа с админ пользователем...')
       
       const response = await fetch('http://localhost:3000/auth/login', {
         method: 'POST',
@@ -148,8 +154,8 @@ class TokenManager {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          identifier: 'testuser',
-          password: 'password123'
+          identifier: 'admin@unpacksbot.com',
+          password: 'admin123'
         })
       })
 
@@ -160,6 +166,8 @@ class TokenManager {
         return data
       } else {
         console.log('❌ Ошибка автоматической авторизации:', response.status)
+        const errorText = await response.text()
+        console.log('📄 Детали ошибки:', errorText)
         return null
       }
     } catch (error) {

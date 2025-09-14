@@ -43,7 +43,7 @@ const statusConfig: Record<string, {
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
   },
-  DELIVERED: {
+  COMPLETED: {
     label: 'Доставлено',
     icon: CheckCircleIcon,
     color: 'text-green-600 bg-green-50',
@@ -86,8 +86,8 @@ const statusConfig: Record<string, {
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
   },
-  delivered: {
-    label: 'Доставлено',
+  completed: {
+    label: 'Завершено',
     icon: CheckCircleIcon,
     color: 'text-green-600 bg-green-50',
     bgColor: 'bg-green-50',
@@ -147,7 +147,7 @@ export function DealCard({ deal }: DealCardProps) {
       <div className="flex space-x-4 mb-4">
         <div className="relative h-16 w-16 flex-shrink-0">
           <Image
-            src={deal.product.images[0] || '/api/placeholder/300/300'}
+            src={deal.product.images?.[0] || '/avatars/default.jpg'}
             alt={deal.product.title}
             fill
             className="rounded-lg object-cover"
@@ -165,11 +165,11 @@ export function DealCard({ deal }: DealCardProps) {
             {deal.product.title}
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Продавец: {deal.seller.firstName} {deal.seller.lastName}
+            Продавец: {deal.seller.name}
           </p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-sm font-semibold text-gray-900">
-              {parseInt(deal.amount).toLocaleString()} ₽
+              {deal.totalPrice ? deal.totalPrice.toLocaleString() : '0'} ₽
             </span>
             {deal.quantity && (
               <span className="text-xs text-gray-500">
@@ -205,12 +205,6 @@ export function DealCard({ deal }: DealCardProps) {
           </div>
         )}
         
-        {deal.description && (
-          <div className="flex justify-between">
-            <span>Описание:</span>
-            <span className="font-medium">{deal.description}</span>
-          </div>
-        )}
       </div>
 
       {/* Действия */}

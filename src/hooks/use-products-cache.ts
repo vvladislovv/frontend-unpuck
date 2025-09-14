@@ -45,7 +45,9 @@ export function useProductsCache() {
     // Очищаем старые записи, если кэш переполнен
     if (cacheRef.current.size >= MAX_CACHE_SIZE) {
       const oldestKey = cacheRef.current.keys().next().value
-      cacheRef.current.delete(oldestKey)
+      if (oldestKey) {
+        cacheRef.current.delete(oldestKey)
+      }
     }
 
     cacheRef.current.set(key, {
@@ -97,4 +99,7 @@ export function useProductsCache() {
     generateKey
   }
 }
+
+
+
 
