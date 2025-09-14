@@ -1,4 +1,4 @@
-// File: /Users/evochka/Desktop/Unpacker Clone/frontend/src/app/layout.tsx
+// File: /Users/evochka/Desktop/Clone-Unpacksbot/frontend-unpuck/src/app/layout.tsx
 import * as entry from '../../../src/app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

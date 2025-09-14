@@ -95,7 +95,7 @@ export function ProductCard({ product, viewMode, priority = false }: ProductCard
         
         {/* Теги */}
         <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-          {product.tags.includes('новинка') && (
+          {product.tags?.includes('новинка') && (
             <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
               NEW
             </div>

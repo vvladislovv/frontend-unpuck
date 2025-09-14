@@ -139,13 +139,13 @@ export default function AffiliatePage() {
   }
 
   const copyReferralCode = () => {
-    navigator.clipboard.writeText(affiliateStats.referralCode)
+    navigator.clipboard.writeText(affiliateStats?.referralCode || '')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   const shareReferralLink = () => {
-    const link = `https://example.com/ref/${affiliateStats.referralCode}`
+    const link = `https://example.com/ref/${affiliateStats?.referralCode || ''}`
     if (navigator.share) {
       navigator.share({
         title: 'Присоединяйтесь к платформе!',
@@ -215,19 +215,19 @@ export default function AffiliatePage() {
             <h3 className="text-lg font-semibold mb-4">Ваша статистика</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold">{affiliateStats.totalReferrals}</p>
+                <p className="text-2xl font-bold">{affiliateStats?.totalReferrals || 0}</p>
                 <p className="text-purple-100 text-sm">Всего рефералов</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">₽ {affiliateStats.totalCommission.toLocaleString()}</p>
+                <p className="text-2xl font-bold">₽ {affiliateStats?.totalCommission?.toLocaleString() || '0'}</p>
                 <p className="text-purple-100 text-sm">Общий доход</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">{affiliateStats.activeReferrals}</p>
+                <p className="text-2xl font-bold">{affiliateStats?.activeReferrals || 0}</p>
                 <p className="text-purple-100 text-sm">Активных</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">₽ {affiliateStats.thisMonthCommission.toLocaleString()}</p>
+                <p className="text-2xl font-bold">₽ {affiliateStats?.thisMonthCommission?.toLocaleString() || '0'}</p>
                 <p className="text-purple-100 text-sm">В этом месяце</p>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function AffiliatePage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Ваш реферальный код</h3>
             <div className="flex items-center space-x-3">
               <div className="flex-1 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-lg font-mono font-bold text-gray-900">{affiliateStats.referralCode}</p>
+                <p className="text-lg font-mono font-bold text-gray-900">{affiliateStats?.referralCode || 'Загрузка...'}</p>
               </div>
               <button
                 onClick={copyReferralCode}

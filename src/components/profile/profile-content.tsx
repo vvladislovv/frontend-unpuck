@@ -6,19 +6,6 @@ import { OtherSection } from './other-section'
 import { ProfileSection } from './profile-section'
 import { ToolsSection } from './tools-section'
 
-// Тестовые данные пользователя
-const mockUser: User = {
-  id: '1',
-  name: 'Иван Петров',
-  email: 'ivan@example.com',
-  phone: '+7 (999) 123-45-67',
-  avatar: '/api/placeholder/80/80',
-  bio: 'Люблю качественные товары и хороший сервис',
-  role: 'buyer',
-  verified: true,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-18T12:00:00Z',
-}
 
 interface ProfileContentProps {
   userData?: any
@@ -28,7 +15,7 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ userData, isLoading, theme, onHaptic }: ProfileContentProps) {
-  const [user, setUser] = useState<User>(mockUser)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     if (userData) {
@@ -51,6 +38,33 @@ export function ProfileContent({ userData, isLoading, theme, onHaptic }: Profile
 
   const handleClick = () => {
     onHaptic?.('light')
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка профиля...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Ошибка загрузки</h3>
+          <p className="text-gray-500">Не удалось загрузить данные профиля</p>
+        </div>
+      </div>
+    )
   }
 
   return (

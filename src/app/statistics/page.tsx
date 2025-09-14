@@ -7,24 +7,23 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 interface UserStats {
-  totalPurchases: number
+  totalProducts: number
+  activeProducts: number
+  totalDeals: number
+  completedDeals: number
+  totalRevenue: number
   totalSpent: number
-  profileViews: number
-  rating: number
-  monthlyStats: Array<{
-    month: string
-    amount: number
-    purchases: number
-  }>
-  achievements: Array<{
-    id: string
-    title: string
-    description: string
-    icon: string
-    status: 'completed' | 'in_progress'
-    progress?: number
-    total?: number
-  }>
+  totalReferrals: number
+  referralEarnings: number
+  // Дополнительные метрики
+  totalTransactions?: number
+  completedTransactions?: number
+  pendingTransactions?: number
+  totalIncome?: number
+  totalExpenses?: number
+  netIncome?: number
+  completionRate?: number
+  averageTransactionAmount?: number
 }
 
 export default function StatisticsPage() {
@@ -42,34 +41,16 @@ export default function StatisticsPage() {
       setLoading(true)
       setError(null)
       
+      console.log('🔄 Загружаем статистику с параметрами:', { period: '30d' })
       const response = await statisticsAPI.getUserStats({ period: '30d' })
+      console.log('✅ Ответ сервера (статистика):', response.data)
+      
       const statsData = response.data.data || response.data
       setStats(statsData)
     } catch (err: any) {
-      console.error('Ошибка загрузки статистики:', err)
+      console.error('❌ Ошибка загрузки статистики:', err)
       setError(err.response?.data?.message || 'Ошибка загрузки статистики')
-      
-      // Fallback на моковые данные
-      setStats({
-        totalPurchases: 24,
-        totalSpent: 45600,
-        profileViews: 1234,
-        rating: 4.8,
-        monthlyStats: [
-          { month: 'Июль', amount: 21000, purchases: 9 },
-          { month: 'Август', amount: 28500, purchases: 12 },
-          { month: 'Сентябрь', amount: 23400, purchases: 10 },
-          { month: 'Октябрь', amount: 26700, purchases: 11 },
-          { month: 'Ноябрь', amount: 19200, purchases: 8 },
-          { month: 'Декабрь', amount: 14500, purchases: 6 }
-        ],
-        achievements: [
-          { id: '1', title: 'Первая покупка', description: 'Получено', icon: '🏆', status: 'completed' },
-          { id: '2', title: 'VIP клиент', description: 'Получено', icon: '💎', status: 'completed' },
-          { id: '3', title: '50 покупок', description: '24 из 50', icon: '🎯', status: 'in_progress', progress: 24, total: 50 },
-          { id: '4', title: 'Отзывчик', description: '15 из 20', icon: '⭐', status: 'in_progress', progress: 15, total: 20 }
-        ]
-      })
+      setStats(null)
     } finally {
       setLoading(false)
     }
@@ -130,92 +111,114 @@ export default function StatisticsPage() {
         <div className="px-4 py-6 space-y-6">
           {/* Основные метрики */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Общие покупки */}
+            {/* Товары */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-2">
                 <ShoppingBagIcon className="h-6 w-6 text-gray-400" />
-                <span className="text-xs font-medium text-green-600">+12.5%</span>
+                <span className="text-xs font-medium text-green-600">{stats.activeProducts}/{stats.totalProducts}</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalPurchases}</h3>
-              <p className="text-sm text-gray-500">Общие покупки</p>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalProducts}</h3>
+              <p className="text-sm text-gray-500">Товары</p>
             </div>
 
-            {/* Потрачено */}
+            {/* Сделки */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-2">
                 <CurrencyDollarIcon className="h-6 w-6 text-gray-400" />
-                <span className="text-xs font-medium text-green-600">+8.2%</span>
+                <span className="text-xs font-medium text-green-600">{stats.completedDeals}/{stats.totalDeals}</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">₽ {stats.totalSpent.toLocaleString()}</h3>
-              <p className="text-sm text-gray-500">Потрачено</p>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalDeals}</h3>
+              <p className="text-sm text-gray-500">Сделки</p>
             </div>
 
-            {/* Просмотры профиля */}
+            {/* Доходы */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-2">
                 <EyeIcon className="h-6 w-6 text-gray-400" />
-                <span className="text-xs font-medium text-red-600">-2.1%</span>
+                <span className="text-xs font-medium text-green-600">₽{stats.totalRevenue.toLocaleString()}</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.profileViews.toLocaleString()}</h3>
-              <p className="text-sm text-gray-500">Просмотры профиля</p>
+              <h3 className="text-2xl font-bold text-gray-900">₽ {stats.totalRevenue.toLocaleString()}</h3>
+              <p className="text-sm text-gray-500">Доходы</p>
             </div>
 
-            {/* Рейтинг */}
+            {/* Рефералы */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-2">
                 <StarIcon className="h-6 w-6 text-gray-400" />
-                <span className="text-xs font-medium text-green-600">+0.3%</span>
+                <span className="text-xs font-medium text-green-600">₽{stats.referralEarnings.toLocaleString()}</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.rating}</h3>
-              <p className="text-sm text-gray-500">Рейтинг</p>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalReferrals}</h3>
+              <p className="text-sm text-gray-500">Рефералы</p>
             </div>
           </div>
 
-          {/* Простая статистика за последние месяцы */}
+          {/* Дополнительная информация */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">За последние 6 месяцев</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Дополнительная информация</h3>
             <div className="space-y-3">
-              {stats.monthlyStats.map((month, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{month.month}</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    ₽ {month.amount.toLocaleString()} ({month.purchases} покупок)
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Достижения */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Достижения</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {stats.achievements.map((achievement) => (
-                <div 
-                  key={achievement.id} 
-                  className={`rounded-lg p-3 text-center ${
-                    achievement.status === 'completed' 
-                      ? 'bg-green-50' 
-                      : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{achievement.icon}</div>
-                  <p className={`text-sm font-medium ${
-                    achievement.status === 'completed' 
-                      ? 'text-green-900' 
-                      : 'text-gray-900'
-                  }`}>
-                    {achievement.title}
-                  </p>
-                  <p className={`text-xs ${
-                    achievement.status === 'completed' 
-                      ? 'text-green-700' 
-                      : 'text-gray-700'
-                  }`}>
-                    {achievement.description}
-                  </p>
-                </div>
-              ))}
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Потрачено всего</span>
+                <span className="text-sm font-medium text-gray-900">
+                  ₽ {stats.totalSpent.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Заработано с рефералов</span>
+                <span className="text-sm font-medium text-gray-900">
+                  ₽ {stats.referralEarnings.toLocaleString()}
+                </span>
+              </div>
+              
+              {/* Дополнительные метрики */}
+              {stats.totalTransactions !== undefined && (
+                <>
+                  <div className="border-t border-gray-200 pt-3 mt-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Транзакции</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Всего транзакций</span>
+                        <span className="text-xs font-medium text-gray-900">{stats.totalTransactions}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Завершенных</span>
+                        <span className="text-xs font-medium text-green-600">{stats.completedTransactions}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Ожидающих</span>
+                        <span className="text-xs font-medium text-yellow-600">{stats.pendingTransactions}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Процент завершения</span>
+                        <span className="text-xs font-medium text-blue-600">{stats.completionRate?.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t border-gray-200 pt-3 mt-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Финансы</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Общий доход</span>
+                        <span className="text-xs font-medium text-green-600">₽{stats.totalIncome?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Общие расходы</span>
+                        <span className="text-xs font-medium text-red-600">₽{stats.totalExpenses?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Чистый доход</span>
+                        <span className={`text-xs font-medium ${(stats.netIncome || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          ₽{stats.netIncome?.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Средняя сумма</span>
+                        <span className="text-xs font-medium text-blue-600">₽{stats.averageTransactionAmount?.toFixed(0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

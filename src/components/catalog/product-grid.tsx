@@ -2,7 +2,7 @@
 
 import { productsAPI } from '@/lib/api'
 import { Product } from '@/types'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ProductCard } from './product-card'
 
 interface ProductGridProps {
@@ -15,232 +15,6 @@ interface ProductGridProps {
   onFavoritesCountChange?: (count: number) => void
 }
 
-// Тестовые данные товаров
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    title: 'Электрические МЕЛЬНИЦЫ',
-    description: 'Современные электрические мельницы для дома и офиса',
-    price: 2500,
-    originalPrice: 3000,
-    category: 'home',
-    subcategory: 'kitchen',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.5,
-    reviewsCount: 23,
-    seller: {
-      id: '1',
-      name: 'KitchenPro',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['новинка', 'скидка'],
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-    isFavorite: false,
-  },
-  {
-    id: '2',
-    title: 'МАТОВАЯ ПОМАДА КАРАНДАШ 3B1 N°11',
-    description: 'Качественная матовая помада-карандаш для губ',
-    price: 890,
-    originalPrice: 1200,
-    category: 'beauty',
-    subcategory: 'makeup',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.8,
-    reviewsCount: 156,
-    seller: {
-      id: '2',
-      name: 'BeautyStore',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['новинка', 'хит'],
-    createdAt: '2024-01-14',
-    updatedAt: '2024-01-14',
-    isFavorite: false,
-  },
-  {
-    id: '3',
-    title: 'БЛЕСК ДЛЯ ГУБ',
-    description: 'Блестящий блеск для губ с долгим эффектом',
-    price: 450,
-    category: 'beauty',
-    subcategory: 'makeup',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.2,
-    reviewsCount: 89,
-    seller: {
-      id: '3',
-      name: 'CosmeticShop',
-      avatar: '/api/placeholder/40/40',
-      verified: false,
-    },
-    inStock: true,
-    tags: ['популярное'],
-    createdAt: '2024-01-13',
-    updatedAt: '2024-01-13',
-    isFavorite: false,
-  },
-  {
-    id: '4',
-    title: 'РУМЯНА 2 В 1 СУХИЕ И КРЕМОВЫЕ N°01',
-    description: 'Универсальные румяна сухие и кремовые в одном',
-    price: 1200,
-    category: 'beauty',
-    subcategory: 'makeup',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.6,
-    reviewsCount: 67,
-    seller: {
-      id: '4',
-      name: 'BeautyPro',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['2в1', 'качество'],
-    createdAt: '2024-01-12',
-    updatedAt: '2024-01-12',
-    isFavorite: false,
-  },
-  {
-    id: '5',
-    title: 'РУМЯНА 2 В 1 СУХИЕ И КРЕМОВЫЕ N°04',
-    description: 'Универсальные румяна сухие и кремовые в одном',
-    price: 1200,
-    category: 'beauty',
-    subcategory: 'makeup',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.4,
-    reviewsCount: 45,
-    seller: {
-      id: '4',
-      name: 'BeautyPro',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['2в1', 'качество'],
-    createdAt: '2024-01-11',
-    updatedAt: '2024-01-11',
-    isFavorite: false,
-  },
-  {
-    id: '6',
-    title: 'Зеленые растения для дома',
-    description: 'Комнатные растения для украшения интерьера',
-    price: 800,
-    category: 'home',
-    subcategory: 'decor',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.7,
-    reviewsCount: 34,
-    seller: {
-      id: '5',
-      name: 'GreenHome',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['растения', 'дом'],
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-10',
-    isFavorite: false,
-  },
-  {
-    id: '7',
-    title: 'Джинсы классические',
-    description: 'Удобные джинсы из качественного денима',
-    price: 2500,
-    category: 'clothing',
-    subcategory: 'pants',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.3,
-    reviewsCount: 78,
-    seller: {
-      id: '6',
-      name: 'FashionStore',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['джинсы', 'классика'],
-    createdAt: '2024-01-09',
-    updatedAt: '2024-01-09',
-    isFavorite: false,
-  },
-  {
-    id: '8',
-    title: 'Белая футболка',
-    description: 'Мягкая хлопковая футболка базового кроя',
-    price: 800,
-    category: 'clothing',
-    subcategory: 'shirts',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.5,
-    reviewsCount: 123,
-    seller: {
-      id: '7',
-      name: 'BasicWear',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['базовая', 'хлопок'],
-    createdAt: '2024-01-08',
-    updatedAt: '2024-01-08',
-    isFavorite: false,
-  },
-  {
-    id: '9',
-    title: 'Смартфон iPhone 15',
-    description: 'Новейший смартфон с отличной камерой',
-    price: 89990,
-    originalPrice: 99990,
-    category: 'electronics',
-    subcategory: 'phones',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.9,
-    reviewsCount: 234,
-    seller: {
-      id: '8',
-      name: 'TechStore',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['новинка', 'скидка', 'премиум'],
-    createdAt: '2024-01-07',
-    updatedAt: '2024-01-07',
-    isFavorite: false,
-  },
-  {
-    id: '10',
-    title: 'Книга "Программирование"',
-    description: 'Учебник по современному программированию',
-    price: 1200,
-    category: 'other',
-    subcategory: 'other',
-    images: ['/api/placeholder/300/300'],
-    rating: 4.6,
-    reviewsCount: 45,
-    seller: {
-      id: '9',
-      name: 'BookStore',
-      avatar: '/api/placeholder/40/40',
-      verified: true,
-    },
-    inStock: true,
-    tags: ['учеба', 'технологии'],
-    createdAt: '2024-01-06',
-    updatedAt: '2024-01-06',
-    isFavorite: false,
-  },
-]
 
 export function ProductGrid({ 
   viewMode, 
@@ -253,8 +27,13 @@ export function ProductGrid({
 }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<string[]>([])
+  const [hasMore, setHasMore] = useState(true)
+  const [total, setTotal] = useState(0)
+  const [offset, setOffset] = useState(0)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // Получаем избранные товары из localStorage
   const getFavoritesFromStorage = () => {
@@ -263,10 +42,15 @@ export function ProductGrid({
   }
 
   // Загружаем товары с сервера
-  const loadProducts = async () => {
+  const loadProducts = async (isLoadMore = false) => {
     try {
-      setLoading(true)
-      setError(null)
+      if (isLoadMore) {
+        setLoadingMore(true)
+      } else {
+        setLoading(true)
+        setError(null)
+        setOffset(0)
+      }
       
       const params = {
         search: searchQuery || undefined,
@@ -275,20 +59,55 @@ export function ProductGrid({
         maxPrice: priceRange.max > 0 ? priceRange.max : undefined,
         sortBy: sortBy === 'newest' ? 'date' : sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? 'price' : 'rating',
         sortOrder: sortBy === 'price-high' ? 'desc' : 'asc',
-        limit: 50,
-        offset: 0
+        limit: isLoadMore ? 10 : 30,
+        offset: isLoadMore ? offset : 0
       }
 
+      console.log('🔄 Загружаем товары с параметрами:', params)
       const response = await productsAPI.getProducts(params)
-      const productsData = response.data.data || response.data
-      setProducts(Array.isArray(productsData) ? productsData : [])
+      console.log('✅ Ответ сервера:', response.data)
+      
+      const productsData = response.data.products || response.data.data || response.data
+      const newTotal = response.data.pagination?.total || 0
+      const currentOffset = isLoadMore ? offset : 0
+      const currentLimit = isLoadMore ? 10 : 30
+      const newHasMore = (currentOffset + currentLimit) < newTotal
+
+      if (isLoadMore) {
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(item => item.id))
+          const newProducts = Array.isArray(productsData) 
+            ? productsData.filter(item => !existingIds.has(item.id))
+            : []
+          return [...prev, ...newProducts]
+        })
+        setOffset(prev => prev + 10)
+      } else {
+        setProducts(Array.isArray(productsData) ? productsData : [])
+        setOffset(30)
+      }
+      
+      setTotal(newTotal)
+      setHasMore(newHasMore)
     } catch (err: any) {
-      console.error('Ошибка загрузки товаров:', err)
+      console.error('❌ Ошибка загрузки товаров:', err)
       setError(err.response?.data?.message || 'Ошибка загрузки товаров')
-      // Fallback на моковые данные при ошибке
-      setProducts(mockProducts)
+      if (!isLoadMore) {
+        setProducts([])
+      }
     } finally {
-      setLoading(false)
+      if (isLoadMore) {
+        setLoadingMore(false)
+      } else {
+        setLoading(false)
+      }
+    }
+  }
+
+  // Подгрузка товаров
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      loadProducts(true)
     }
   }
 
@@ -296,6 +115,29 @@ export function ProductGrid({
   useEffect(() => {
     loadProducts()
   }, [searchQuery, category, priceRange, sortBy])
+
+  // Intersection Observer для автоматической подгрузки
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0]
+        if (target.isIntersecting && hasMore && !loadingMore && !loading) {
+          loadMore()
+        }
+      },
+      {
+        rootMargin: '100px'
+      }
+    )
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current)
+    }
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [hasMore, loadingMore, loading])
 
   // Загружаем избранное при монтировании компонента
   useEffect(() => {
@@ -341,6 +183,17 @@ export function ProductGrid({
       window.removeEventListener('favoritesChanged', handleStorageChange)
     }
   }, [favorites.length, onFavoritesCountChange])
+
+  // Переключаем избранное
+  const toggleFavorite = (productId: string) => {
+    const newFavorites = favorites.includes(productId)
+      ? favorites.filter(id => id !== productId)
+      : [...favorites, productId]
+    
+    setFavorites(newFavorites)
+    localStorage.setItem('favorites', JSON.stringify(newFavorites))
+    onFavoritesCountChange?.(newFavorites.length)
+  }
 
   // Фильтрация товаров (дополнительная фильтрация на клиенте для избранного)
   let filteredProducts = products.filter((product) => {
@@ -397,15 +250,42 @@ export function ProductGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      {filteredProducts.map((product, index) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          viewMode={viewMode}
-          priority={index < 4} // Приоритет для первых 4 товаров
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        {filteredProducts.map((product, index) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            viewMode={viewMode}
+            priority={index < 4} // Приоритет для первых 4 товаров
+            isFavorite={favorites.includes(product.id)}
+            onToggleFavorite={toggleFavorite}
+          />
+        ))}
+      </div>
+
+      {/* Кнопка подгрузки */}
+      {hasMore && (
+        <div className="flex justify-center py-4">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loadingMore ? 'Загружаем...' : 'Загрузить еще'}
+          </button>
+        </div>
+      )}
+
+      {/* Индикатор загрузки */}
+      {loadingMore && (
+        <div className="flex justify-center py-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+
+      {/* Элемент для отслеживания прокрутки */}
+      <div ref={loadMoreRef} className="h-4" />
     </div>
   )
 }

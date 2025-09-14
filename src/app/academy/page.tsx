@@ -1,90 +1,36 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
-import { ArrowLeftIcon, BookOpenIcon, CheckIcon, ClockIcon, DocumentTextIcon, PlayIcon, VideoCameraIcon } from '@heroicons/react/24/outline'
+import { academyAPI } from '@/lib/api'
+import { ArrowLeftIcon, BookOpenIcon, ClockIcon, DocumentTextIcon, PlayIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Course {
   id: string
   title: string
   description: string
-  duration: string
-  level: 'beginner' | 'intermediate' | 'advanced'
-  type: 'video' | 'article' | 'course'
-  completed: boolean
-  progress: number
-  thumbnail: string
-}
-
-const courses: Course[] = [
-  {
-    id: '1',
-    title: 'Основы работы с платформой',
-    description: 'Изучите базовые функции и возможности платформы',
-    duration: '15 мин',
-    level: 'beginner',
-    type: 'video',
-    completed: true,
-    progress: 100,
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: '2',
-    title: 'Безопасные покупки',
-    description: 'Как защитить себя от мошенничества при покупках',
-    duration: '8 мин',
-    level: 'beginner',
-    type: 'video',
-    completed: false,
-    progress: 60,
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: '3',
-    title: 'Как стать продавцом',
-    description: 'Пошаговое руководство по регистрации продавца',
-    duration: '25 мин',
-    level: 'intermediate',
-    type: 'course',
-    completed: false,
-    progress: 0,
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: '4',
-    title: 'Партнерская программа',
-    description: 'Как зарабатывать, приглашая друзей',
-    duration: '12 мин',
-    level: 'beginner',
-    type: 'video',
-    completed: false,
-    progress: 0,
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: '5',
-    title: 'Правила и условия',
-    description: 'Подробное описание пользовательского соглашения',
-    duration: '5 мин',
-    level: 'beginner',
-    type: 'article',
-    completed: true,
-    progress: 100,
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: '6',
-    title: 'Продвинутые настройки',
-    description: 'Настройка уведомлений, приватности и безопасности',
-    duration: '20 мин',
-    level: 'advanced',
-    type: 'course',
-    completed: false,
-    progress: 30,
-    thumbnail: '/api/placeholder/300/200'
+  content: string
+  status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED'
+  order: number
+  createdAt: string
+  updatedAt: string
+  lessons: Array<{
+    id: string
+    courseId: string
+    title: string
+    content: string
+    videoUrl: string
+    duration: number
+    status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED'
+    order: number
+    createdAt: string
+    updatedAt: string
+  }>
+  _count: {
+    lessons: number
   }
-]
+}
 
 const categories = ['Все', 'Видео', 'Статьи', 'Курсы']
 const levels = ['Все уровни', 'Начинающий', 'Средний', 'Продвинутый']
@@ -93,72 +39,106 @@ export default function AcademyPage() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState('Все')
   const [selectedLevel, setSelectedLevel] = useState('Все уровни')
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loading, setLoading] = useState(true)
+  const [progress, setProgress] = useState({ completed: 0, inProgress: 0, total: 0 })
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video':
-        return <VideoCameraIcon className="h-5 w-5" />
-      case 'article':
-        return <DocumentTextIcon className="h-5 w-5" />
-      case 'course':
-        return <BookOpenIcon className="h-5 w-5" />
-      default:
-        return <BookOpenIcon className="h-5 w-5" />
+  useEffect(() => {
+    loadCourses()
+    loadProgress()
+  }, [])
+
+  const loadCourses = async () => {
+    try {
+      console.log('🔄 Загружаем курсы с параметрами:', {
+        category: selectedCategory !== 'Все' ? selectedCategory.toLowerCase() : undefined,
+        level: selectedLevel !== 'Все уровни' ? selectedLevel.toLowerCase() : undefined,
+        limit: 50
+      })
+      
+      const response = await academyAPI.getCourses({
+        category: selectedCategory !== 'Все' ? selectedCategory.toLowerCase() : undefined,
+        level: selectedLevel !== 'Все уровни' ? selectedLevel.toLowerCase() : undefined,
+        limit: 50
+      })
+      
+      console.log('✅ Ответ сервера (курсы):', response.data)
+      setCourses(response.data || [])
+    } catch (error) {
+      console.error('❌ Ошибка загрузки курсов:', error)
+      setCourses([])
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getTypeText = (type: string) => {
-    switch (type) {
-      case 'video':
-        return 'Видео'
-      case 'article':
-        return 'Статья'
-      case 'course':
-        return 'Курс'
-      default:
-        return 'Материал'
+  const loadProgress = async () => {
+    try {
+      console.log('🔄 Загружаем прогресс...')
+      const response = await academyAPI.getProgress()
+      console.log('✅ Ответ сервера (прогресс):', response.data)
+      setProgress(response.data || { completed: 0, inProgress: 0, total: 0 })
+    } catch (error) {
+      console.error('❌ Ошибка загрузки прогресса:', error)
     }
   }
 
-  const getLevelText = (level: string) => {
-    switch (level) {
-      case 'beginner':
-        return 'Начинающий'
-      case 'intermediate':
-        return 'Средний'
-      case 'advanced':
+  const getTypeIcon = () => {
+    return <BookOpenIcon className="h-5 w-5" />
+  }
+
+  const getTypeText = () => {
+    return 'Курс'
+  }
+
+  const getLevelText = (order: number) => {
+    if (order <= 2) return 'Начинающий'
+    if (order <= 4) return 'Средний'
         return 'Продвинутый'
-      default:
-        return level
-    }
   }
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner':
-        return 'bg-green-100 text-green-800'
-      case 'intermediate':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'advanced':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+  const getLevelColor = (order: number) => {
+    if (order <= 2) return 'bg-green-100 text-green-800'
+    if (order <= 4) return 'bg-yellow-100 text-yellow-800'
+    return 'bg-red-100 text-red-800'
+  }
+
+  const getTotalDuration = (lessons: Course['lessons']) => {
+    return lessons.reduce((total, lesson) => total + lesson.duration, 0)
+  }
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    if (hours > 0) {
+      return `${hours}ч ${mins}м`
     }
+    return `${mins}м`
   }
 
   const filteredCourses = courses.filter(course => {
-    const categoryMatch = selectedCategory === 'Все' || 
-      (selectedCategory === 'Видео' && course.type === 'video') ||
-      (selectedCategory === 'Статьи' && course.type === 'article') ||
-      (selectedCategory === 'Курсы' && course.type === 'course')
+    const categoryMatch = selectedCategory === 'Все' || selectedCategory === 'Курсы'
     
     const levelMatch = selectedLevel === 'Все уровни' ||
-      (selectedLevel === 'Начинающий' && course.level === 'beginner') ||
-      (selectedLevel === 'Средний' && course.level === 'intermediate') ||
-      (selectedLevel === 'Продвинутый' && course.level === 'advanced')
+      (selectedLevel === 'Начинающий' && course.order <= 2) ||
+      (selectedLevel === 'Средний' && course.order > 2 && course.order <= 4) ||
+      (selectedLevel === 'Продвинутый' && course.order > 4)
     
     return categoryMatch && levelMatch
   })
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Загрузка курсов...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
 
   return (
     <MainLayout>
@@ -179,15 +159,15 @@ export default function AcademyPage() {
             <h3 className="text-lg font-semibold mb-2">Ваш прогресс</h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold">2</p>
+                <p className="text-2xl font-bold">{progress.completed}</p>
                 <p className="text-blue-100 text-sm">Завершено</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">4</p>
+                <p className="text-2xl font-bold">{progress.inProgress}</p>
                 <p className="text-blue-100 text-sm">В процессе</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">6</p>
+                <p className="text-2xl font-bold">{progress.total}</p>
                 <p className="text-blue-100 text-sm">Всего</p>
               </div>
             </div>
@@ -239,22 +219,18 @@ export default function AcademyPage() {
             {filteredCourses.map((course) => (
               <div key={course.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="flex">
-                  <div className="w-24 h-16 bg-gray-200 flex-shrink-0">
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-24 h-16 bg-gray-200 flex-shrink-0 flex items-center justify-center">
+                    <BookOpenIcon className="h-8 w-8 text-gray-400" />
                   </div>
                   
                   <div className="flex-1 p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
-                          {getTypeIcon(course.type)}
-                          <span className="text-xs text-gray-500">{getTypeText(course.type)}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${getLevelColor(course.level)}`}>
-                            {getLevelText(course.level)}
+                          {getTypeIcon()}
+                          <span className="text-xs text-gray-500">{getTypeText()}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${getLevelColor(course.order)}`}>
+                            {getLevelText(course.order)}
                           </span>
                         </div>
                         
@@ -264,14 +240,12 @@ export default function AcademyPage() {
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
                           <div className="flex items-center space-x-1">
                             <ClockIcon className="h-3 w-3" />
-                            <span>{course.duration}</span>
+                            <span>{formatDuration(getTotalDuration(course.lessons))}</span>
                           </div>
-                          {course.completed && (
-                            <div className="flex items-center space-x-1 text-green-600">
-                              <CheckIcon className="h-3 w-3" />
-                              <span>Завершено</span>
+                          <div className="flex items-center space-x-1">
+                            <DocumentTextIcon className="h-3 w-3" />
+                            <span>{course._count.lessons} уроков</span>
                             </div>
-                          )}
                         </div>
                       </div>
                       
@@ -279,19 +253,6 @@ export default function AcademyPage() {
                         <PlayIcon className="h-5 w-5" />
                       </button>
                     </div>
-                    
-                    {/* Прогресс бар */}
-                    {course.progress > 0 && course.progress < 100 && (
-                      <div className="mt-3">
-                        <div className="w-full bg-gray-200 rounded-full h-1">
-                          <div 
-                            className="bg-blue-600 h-1 rounded-full transition-all duration-300"
-                            style={{ width: `${course.progress}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">{course.progress}% завершено</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

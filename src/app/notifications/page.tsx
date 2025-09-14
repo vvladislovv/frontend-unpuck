@@ -76,13 +76,30 @@ export default function NotificationsPage() {
       setLoading(true)
       setError(null)
       
+      console.log('🔔 Загружаем уведомления...')
       const response = await usersAPI.getNotifications({ limit: 50 })
-      const notificationsData = response.data.data || response.data
+      console.log('📊 Ответ от API:', response.data)
+      
+      // Обрабатываем разные форматы ответа
+      let notificationsData = []
+      if (response.data.success && response.data.data) {
+        // Новый формат ответа
+        notificationsData = response.data.data
+        console.log('✅ Уведомления загружены:', notificationsData.length)
+      } else if (Array.isArray(response.data)) {
+        // Прямой массив
+        notificationsData = response.data
+      } else if (response.data.data) {
+        // Старый формат
+        notificationsData = response.data.data
+      }
+      
       setNotifications(Array.isArray(notificationsData) ? notificationsData : [])
     } catch (err: any) {
-      console.error('Ошибка загрузки уведомлений:', err)
+      console.error('❌ Ошибка загрузки уведомлений:', err)
       setError(err.response?.data?.message || 'Ошибка загрузки уведомлений')
       // Fallback на моковые данные
+      console.log('🔄 Используем моковые данные')
       setNotifications(mockNotifications)
     } finally {
       setLoading(false)

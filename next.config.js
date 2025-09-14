@@ -1,46 +1,62 @@
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  buildExcludes: [/middleware-manifest\.json$/],
-})
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Development server configuration
+  devIndicators: {
+    buildActivity: true,
+  },
+  
+  // Environment variables
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  },
+  
+  // Image configuration
   images: {
-    domains: ['localhost'],
-    unoptimized: true, // Для TWA
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'picsum.photos',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'source.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/**',
       },
     ],
   },
-  // Настройки для TWA
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-        ],
-      },
-    ]
-  },
-  // Suppress hydration warnings for external attributes
-  experimental: {
-    // Note: suppressHydrationWarning is not a valid experimental option
-    // We handle this at the component level instead
+  
+  // Webpack configuration
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Add any custom webpack configuration here
+    return config;
   },
 }
 
-module.exports = withPWA(nextConfig)
+module.exports = nextConfig

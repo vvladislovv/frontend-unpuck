@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Deal, DealStatus } from '@/types'
+import { Deal } from '@/types'
 import {
     CheckCircleIcon,
     ClockIcon,
@@ -15,13 +15,56 @@ interface DealCardProps {
   deal: Deal
 }
 
-const statusConfig: Record<DealStatus, {
+const statusConfig: Record<string, {
   label: string
   icon: React.ComponentType<{ className?: string }>
   color: string
   bgColor: string
   borderColor: string
 }> = {
+  PENDING: {
+    label: 'Ожидает подтверждения',
+    icon: ClockIcon,
+    color: 'text-yellow-600 bg-yellow-50',
+    bgColor: 'bg-yellow-50',
+    borderColor: 'border-yellow-200',
+  },
+  CONFIRMED: {
+    label: 'Подтверждено',
+    icon: CheckCircleIcon,
+    color: 'text-blue-600 bg-blue-50',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+  },
+  SHIPPED: {
+    label: 'Отправлено',
+    icon: TruckIcon,
+    color: 'text-purple-600 bg-purple-50',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+  },
+  DELIVERED: {
+    label: 'Доставлено',
+    icon: CheckCircleIcon,
+    color: 'text-green-600 bg-green-50',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
+  },
+  CANCELLED: {
+    label: 'Отменено',
+    icon: XCircleIcon,
+    color: 'text-red-600 bg-red-50',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
+  },
+  DISPUTED: {
+    label: 'Спор',
+    icon: XCircleIcon,
+    color: 'text-orange-600 bg-orange-50',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
+  },
+  // Fallback для старых статусов в нижнем регистре
   pending: {
     label: 'Ожидает подтверждения',
     icon: ClockIcon,
@@ -60,7 +103,7 @@ const statusConfig: Record<DealStatus, {
 }
 
 export function DealCard({ deal }: DealCardProps) {
-  const config = statusConfig[deal.status]
+  const config = statusConfig[deal.status] || statusConfig['PENDING']
   const StatusIcon = config.icon
 
   const formatDate = (dateString: string) => {
@@ -110,7 +153,9 @@ export function DealCard({ deal }: DealCardProps) {
             className="rounded-lg object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement
-              target.src = '/api/placeholder/300/300'
+              if (!target.src.includes('data:image/svg+xml')) {
+                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyMEgyMFYyNEgyNFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTQ0IDIwSDQwVjI0SDQ0VjIwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMjQgNDBIMjBWNEM0SDQwVjQwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNNDQgNDBINDBWNEM0SDQ0VjQwWiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K'
+              }
             }}
           />
         </div>
@@ -120,25 +165,29 @@ export function DealCard({ deal }: DealCardProps) {
             {deal.product.title}
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Продавец: {deal.seller.name}
+            Продавец: {deal.seller.firstName} {deal.seller.lastName}
           </p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-sm font-semibold text-gray-900">
-              {deal.totalPrice.toLocaleString()} ₽
+              {parseInt(deal.amount).toLocaleString()} ₽
             </span>
-            <span className="text-xs text-gray-500">
-              Количество: {deal.quantity}
-            </span>
+            {deal.quantity && (
+              <span className="text-xs text-gray-500">
+                Количество: {deal.quantity}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Дополнительная информация */}
       <div className="space-y-3 text-xs text-gray-600 mb-4">
-        <div className="flex justify-between">
-          <span>Способ оплаты:</span>
-          <span className="font-medium">{getPaymentMethodLabel(deal.paymentMethod)}</span>
-        </div>
+        {deal.paymentMethod && (
+          <div className="flex justify-between">
+            <span>Способ оплаты:</span>
+            <span className="font-medium">{getPaymentMethodLabel(deal.paymentMethod)}</span>
+          </div>
+        )}
         
         {deal.trackingNumber && (
           <div className="flex justify-between">
@@ -153,6 +202,13 @@ export function DealCard({ deal }: DealCardProps) {
             <span className="font-medium">
               {formatDate(deal.estimatedDelivery)}
             </span>
+          </div>
+        )}
+        
+        {deal.description && (
+          <div className="flex justify-between">
+            <span>Описание:</span>
+            <span className="font-medium">{deal.description}</span>
           </div>
         )}
       </div>

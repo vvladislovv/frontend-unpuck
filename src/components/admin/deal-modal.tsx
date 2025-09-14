@@ -258,7 +258,7 @@ export function DealModal({ isOpen, onClose, deal }: DealModalProps) {
                       </Badge>
                     </div>
                   </div>
-                  {deal.product.tags.length > 0 && (
+                  {deal.product.tags && deal.product.tags.length > 0 && (
                     <div className="mt-3">
                       <span className="text-gray-600 text-sm">Теги:</span>
                       <div className="flex flex-wrap gap-1 mt-1">

@@ -40,11 +40,18 @@ export const useAuthStore = create<AuthState>()(
 
       login: (user, token) => {
         set({ user, token, isLoading: false })
+        // Сохраняем токен в localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', token)
+        }
       },
 
       logout: () => {
         set({ user: null, token: null, isLoading: false })
-        // Clear any other stores if needed
+        // Очищаем токен из localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token')
+        }
       },
 
       updateUser: (updates) => {

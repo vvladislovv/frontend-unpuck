@@ -1,17 +1,25 @@
 'use client'
 
 import { MainLayout } from '@/components/layouts/main-layout'
-import { supportAPI } from '@/lib/api'
+import { chatAPI } from '@/lib/api'
 import { ArrowLeftIcon, CheckCircleIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
 interface Message {
-  id: number
-  text: string
+  id: string
+  content: string
   isUser: boolean
   timestamp: Date
+  sender?: {
+    id: string
+    firstName: string
+    lastName: string
+  }
+  metadata?: {
+    isFromAdmin?: boolean
+  }
 }
 
 export default function SupportPage() {
@@ -32,19 +40,24 @@ export default function SupportPage() {
       setLoading(true)
       setError(null)
       
-      const response = await supportAPI.getMessages({ limit: 50 })
-      const messagesData = response.data.data || response.data
-      const messagesArray = Array.isArray(messagesData) ? messagesData : []
+      const response = await chatAPI.getAdminChat()
+      const chatData = response.data
       
-      // Преобразуем в формат для отображения
-      const formattedMessages = messagesArray.map((msg: any) => ({
-        id: msg.id,
-        text: msg.message,
-        isUser: msg.isUser || false,
-        timestamp: new Date(msg.createdAt)
-      }))
-      
-      setMessages(formattedMessages)
+      if (chatData && chatData.messages) {
+        // Преобразуем сообщения чата в формат для отображения
+        const formattedMessages = chatData.messages.map((msg: any) => ({
+          id: msg.id,
+          content: msg.content,
+          isUser: !msg.metadata?.isFromAdmin, // Если не от админа, то от пользователя
+          timestamp: new Date(msg.createdAt),
+          sender: msg.sender,
+          metadata: msg.metadata
+        }))
+        
+        setMessages(formattedMessages)
+      } else {
+        setMessages([])
+      }
     } catch (err: any) {
       console.error('Ошибка загрузки сообщений:', err)
       setError(err.response?.data?.message || 'Ошибка загрузки сообщений')
@@ -56,43 +69,35 @@ export default function SupportPage() {
   const handleSendMessage = async () => {
     if (!message.trim()) return
     
-    const newMessage: Message = {
-      id: Date.now(),
-      text: message,
-      isUser: true,
-      timestamp: new Date()
-    }
-    
-    setMessages(prev => [...prev, newMessage])
     const messageText = message
     setMessage('')
     setIsLoading(true)
     
     try {
-      // Отправляем сообщение через API
-      await supportAPI.sendMessage({
-        subject: 'Сообщение в поддержку',
-        message: messageText,
-        type: 'support',
-        priority: 'medium'
-      })
+      // Отправляем сообщение через API чата
+      const response = await chatAPI.sendMessageToAdmin(messageText)
       
+      // Добавляем сообщение пользователя в чат
+      const newMessage: Message = {
+        id: response.data.id,
+        content: messageText,
+        isUser: true,
+        timestamp: new Date(response.data.createdAt),
+        sender: response.data.sender
+      }
+      
+      setMessages(prev => [...prev, newMessage])
       toast.success('Сообщение отправлено!')
       
-      // Симуляция ответа поддержки
+      // Перезагружаем сообщения через 3 секунды, чтобы получить ответ админа
       setTimeout(() => {
-        const response: Message = {
-          id: Date.now() + 1,
-          text: 'Спасибо за ваше сообщение! Мы получили ваш запрос и ответим в ближайшее время. Обычно время ответа составляет 1-2 часа в рабочее время.',
-          isUser: false,
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, response])
+        loadMessages()
         setIsLoading(false)
-      }, 2000)
+      }, 3000)
+      
     } catch (error) {
       console.error('Ошибка отправки сообщения:', error)
-      toast.error('Ошибка отправки сообщения')
+      toast.error('Не удалось отправить сообщение')
       setIsLoading(false)
     }
   }
@@ -130,7 +135,7 @@ export default function SupportPage() {
                       ? 'bg-blue-600 text-white' 
                       : 'bg-gray-100 text-gray-900'
                   }`}>
-                    <p className="text-sm">{msg.text}</p>
+                    <p className="text-sm">{msg.content}</p>
                     <p className={`text-xs mt-1 ${
                       msg.isUser ? 'text-blue-100' : 'text-gray-500'
                     }`}>

@@ -25,12 +25,6 @@ const mockDeals: Deal[] = [
       images: ['/api/placeholder/300/300'],
       rating: 4.5,
       reviewsCount: 23,
-      seller: {
-        id: '1',
-        name: 'KitchenPro',
-        avatar: '/api/placeholder/40/40',
-        verified: true,
-      },
       inStock: true,
       tags: ['новинка', 'скидка'],
       createdAt: '2024-01-15',
@@ -51,10 +45,11 @@ const mockDeals: Deal[] = [
       email: 'kitchen@example.com',
       role: 'seller' as const,
       verified: true,
+      avatar: '/api/placeholder/40/40',
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     },
-    status: 'shipped',
+    status: 'SHIPPED',
     quantity: 1,
     totalPrice: 2500,
     paymentMethod: 'card',
@@ -75,12 +70,6 @@ const mockDeals: Deal[] = [
       images: ['/api/placeholder/300/300'],
       rating: 4.8,
       reviewsCount: 156,
-      seller: {
-        id: '2',
-        name: 'BeautyStore',
-        avatar: '/api/placeholder/40/40',
-        verified: true,
-      },
       inStock: true,
       tags: ['новинка', 'хит'],
       createdAt: '2024-01-14',
@@ -101,10 +90,11 @@ const mockDeals: Deal[] = [
       email: 'beauty@example.com',
       role: 'seller' as const,
       verified: true,
+      avatar: '/api/placeholder/40/40',
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     },
-    status: 'delivered',
+    status: 'DELIVERED',
     quantity: 2,
     totalPrice: 1780,
     paymentMethod: 'wallet',
@@ -122,12 +112,6 @@ const mockDeals: Deal[] = [
       images: ['/api/placeholder/300/300'],
       rating: 4.2,
       reviewsCount: 89,
-      seller: {
-        id: '3',
-        name: 'CosmeticShop',
-        avatar: '/api/placeholder/40/40',
-        verified: false,
-      },
       inStock: true,
       tags: ['популярное'],
       createdAt: '2024-01-13',
@@ -148,10 +132,11 @@ const mockDeals: Deal[] = [
       email: 'cosmetic@example.com',
       role: 'seller' as const,
       verified: false,
+      avatar: '/api/placeholder/40/40',
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     },
-    status: 'pending',
+    status: 'PENDING',
     quantity: 1,
     totalPrice: 450,
     paymentMethod: 'crypto',
@@ -167,40 +152,47 @@ const statusConfig: Record<DealStatus, {
   bgColor: string
   borderColor: string
 }> = {
-  pending: {
+  PENDING: {
     label: 'Ожидает подтверждения',
     icon: '⏰',
     color: 'text-yellow-600 bg-yellow-50',
     bgColor: 'bg-yellow-50',
     borderColor: 'border-yellow-200',
   },
-  confirmed: {
+  CONFIRMED: {
     label: 'Подтверждено',
     icon: '✅',
     color: 'text-blue-600 bg-blue-50',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
   },
-  shipped: {
+  SHIPPED: {
     label: 'Отправлено',
     icon: '🚚',
     color: 'text-purple-600 bg-purple-50',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
   },
-  delivered: {
+  DELIVERED: {
     label: 'Доставлено',
     icon: '✅',
     color: 'text-green-600 bg-green-50',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
   },
-  cancelled: {
+  CANCELLED: {
     label: 'Отменено',
     icon: '❌',
     color: 'text-red-600 bg-red-50',
     bgColor: 'bg-red-50',
     borderColor: 'border-red-200',
+  },
+  DISPUTED: {
+    label: 'Спор',
+    icon: '⚠️',
+    color: 'text-orange-600 bg-orange-50',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
   },
 }
 
@@ -259,7 +251,33 @@ export default function DealDetailsPage() {
     )
   }
 
-  const config = statusConfig[deal.status]
+  const config = statusConfig[deal.status] || {
+    label: 'Неизвестный статус',
+    icon: '❓',
+    color: 'text-gray-600 bg-gray-50',
+    bgColor: 'bg-gray-50',
+    borderColor: 'border-gray-200',
+  }
+
+  // Дополнительная проверка на случай, если config все еще undefined
+  if (!config) {
+    console.error('Не удалось получить конфигурацию для статуса:', deal.status)
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Ошибка загрузки сделки</h1>
+          <p className="text-gray-600 mb-4">Неправильный статус сделки: {deal.status}</p>
+          <Link 
+            href="/deals"
+            className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700"
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+            <span>Вернуться к сделкам</span>
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -305,12 +323,12 @@ export default function DealDetailsPage() {
 
       if (result.success) {
         // Обновляем статус сделки в localStorage
-        updateDealStatus(deal.id, 'cancelled', cancelReason || 'Отменено покупателем')
+        updateDealStatus(deal.id, 'CANCELLED', cancelReason || 'Отменено покупателем')
         
         // Обновляем локальное состояние
         setDeal(prev => prev ? { 
           ...prev, 
-          status: 'cancelled',
+          status: 'CANCELLED',
           updatedAt: new Date().toISOString()
         } : null)
         setShowCancelModal(false)
@@ -318,7 +336,7 @@ export default function DealDetailsPage() {
         
         // Отправляем событие для синхронизации с другими страницами
         window.dispatchEvent(new CustomEvent('dealUpdated', { 
-          detail: { dealId: deal.id, status: 'cancelled' } 
+          detail: { dealId: deal.id, status: 'CANCELLED' } 
         }))
         
         // Показываем уведомление об успешной отмене
@@ -393,10 +411,10 @@ export default function DealDetailsPage() {
                 </p>
                 <div className="flex items-center space-x-6">
                   <span className="text-2xl font-bold text-gray-900">
-                    {deal.totalPrice.toLocaleString()} ₽
+                    {deal.totalPrice?.toLocaleString() || '0'} ₽
                   </span>
                   <span className="text-gray-500">
-                    Количество: {deal.quantity}
+                    Количество: {deal.quantity || 1}
                   </span>
                 </div>
               </div>
@@ -471,7 +489,7 @@ export default function DealDetailsPage() {
               <div className="flex justify-between items-center py-2 border-t border-gray-200 pt-4">
                 <span className="text-lg font-semibold text-gray-900">Общая сумма:</span>
                 <span className="text-2xl font-bold text-gray-900">
-                  {deal.totalPrice.toLocaleString()} ₽
+                  {deal.totalPrice?.toLocaleString() || '0'} ₽
                 </span>
               </div>
             </div>
@@ -480,7 +498,7 @@ export default function DealDetailsPage() {
 
         {/* Дополнительные действия */}
         
-        {(deal.status === 'pending' || deal.status === 'confirmed') && (
+        {(deal.status === 'PENDING' || deal.status === 'CONFIRMED') && (
           <div className="mb-6">
             <button 
               onClick={handleCancelOrder}

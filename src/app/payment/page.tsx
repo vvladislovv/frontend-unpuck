@@ -23,21 +23,6 @@ interface PaymentData {
   }
 }
 
-// Моковые данные товара (в реальном приложении будут передаваться через URL параметры)
-const mockPaymentData: PaymentData = {
-  productId: '1',
-  productTitle: 'Электрические МЕЛЬНИЦЫ',
-  productImage: '/api/placeholder/300/300',
-  price: 2500,
-  originalPrice: 3000,
-  quantity: 1,
-  totalPrice: 2500,
-  seller: {
-    id: '1',
-    name: 'KitchenPro',
-    verified: true,
-  }
-}
 
 export default function PaymentPage() {
   const router = useRouter()
@@ -76,8 +61,8 @@ export default function PaymentPage() {
         }
       })
     } else {
-      // Fallback на моковые данные если параметры не переданы
-      setPaymentData(mockPaymentData)
+      // Если параметры не переданы, показываем ошибку
+      console.error('❌ Недостаточно параметров для создания платежа')
     }
     setLoading(false)
   }, [searchParams])
@@ -92,15 +77,30 @@ export default function PaymentPage() {
     setIsProcessing(true)
     
     try {
-      // Создание платежа через API
-      const response = await paymentAPI.createPayment({
-        productId: paymentData.productId,
-        quantity: paymentData.quantity,
-        totalPrice: paymentData.totalPrice,
-        userId: 'user_123', // В реальном приложении будет из контекста авторизации
-        paymentMethod
+      console.log('🔄 Создаем платеж:', {
+        amount: paymentData.totalPrice,
+        paymentMethod,
+        description: `Оплата за товар: ${paymentData.productTitle}`,
+        metadata: {
+          productId: paymentData.productId,
+          quantity: paymentData.quantity,
+          sellerId: paymentData.seller.id
+        }
       })
 
+      // Создание платежа через API
+      const response = await paymentAPI.createPayment({
+        amount: paymentData.totalPrice,
+        paymentMethod,
+        description: `Оплата за товар: ${paymentData.productTitle}`,
+        metadata: {
+          productId: paymentData.productId,
+          quantity: paymentData.quantity,
+          sellerId: paymentData.seller.id
+        }
+      })
+
+      console.log('✅ Ответ сервера:', response.data)
       const result = response.data
 
       if (result.success && result.payment) {
@@ -113,7 +113,7 @@ export default function PaymentPage() {
         throw new Error(result.error || 'Ошибка при создании платежа')
       }
     } catch (error: any) {
-      console.error('Ошибка при обработке платежа:', error)
+      console.error('❌ Ошибка при обработке платежа:', error)
       alert(error.response?.data?.message || 'Произошла ошибка при обработке платежа. Попробуйте еще раз.')
     } finally {
       setIsProcessing(false)

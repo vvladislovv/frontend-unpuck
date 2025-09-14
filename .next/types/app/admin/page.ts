@@ -1,4 +1,4 @@
-// File: /Users/evochka/Desktop/Unpacker Clone/frontend/src/app/admin/page.tsx
+// File: /Users/evochka/Desktop/Clone-Unpacksbot/frontend-unpuck/src/app/admin/page.tsx
 import * as entry from '../../../../src/app/admin/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

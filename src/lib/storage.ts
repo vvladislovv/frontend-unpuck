@@ -50,5 +50,24 @@ export function getDealById(dealId: string): Deal | null {
   const deals = getDealsFromStorage()
   if (!deals) return null
   
-  return deals.find(deal => deal.id === dealId) || null
+  const deal = deals.find(deal => deal.id === dealId)
+  if (!deal) return null
+  
+  // Проверяем, что у сделки есть все необходимые поля
+  if (!deal.status || !dealConfig[deal.status]) {
+    console.warn('Сделка с неправильным статусом:', deal)
+    return null
+  }
+  
+  return deal
+}
+
+// Конфигурация статусов для проверки
+const dealConfig: Record<string, boolean> = {
+  'PENDING': true,
+  'CONFIRMED': true,
+  'SHIPPED': true,
+  'DELIVERED': true,
+  'CANCELLED': true,
+  'DISPUTED': true,
 }

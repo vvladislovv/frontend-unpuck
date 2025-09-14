@@ -18,11 +18,11 @@ const profileItems = [
     href: '/profile/edit',
   },
   {
-    id: 'payments',
-    title: 'Платежи',
-    description: 'Способы оплаты и история',
+    id: 'transactions',
+    title: 'Транзакции',
+    description: 'История операций',
     icon: CreditCardIcon,
-    href: '/profile/payments',
+    href: '/profile/transactions',
   },
   {
     id: 'social',

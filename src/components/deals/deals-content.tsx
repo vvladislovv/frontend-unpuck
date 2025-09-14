@@ -6,155 +6,6 @@ import { Deal } from '@/types'
 import { useEffect, useState } from 'react'
 import { DealCard } from './deal-card'
 
-// Тестовые данные сделок
-const mockDeals: Deal[] = [
-  {
-    id: '1',
-    product: {
-      id: '1',
-      title: 'Электрические МЕЛЬНИЦЫ',
-      description: 'Современные электрические мельницы для дома и офиса',
-      price: 2500,
-      originalPrice: 3000,
-      category: 'kitchen',
-      images: ['/api/placeholder/300/300'],
-      rating: 4.5,
-      reviewsCount: 23,
-      seller: {
-        id: '1',
-        name: 'KitchenPro',
-        avatar: '/api/placeholder/40/40',
-        verified: true,
-      },
-      inStock: true,
-      tags: ['новинка', 'скидка'],
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-15',
-    },
-    buyer: {
-      id: '2',
-      name: 'Иван Петров',
-      email: 'ivan@example.com',
-      role: 'buyer' as const,
-      verified: true,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    },
-    seller: {
-      id: '1',
-      name: 'KitchenPro',
-      email: 'kitchen@example.com',
-      role: 'seller' as const,
-      verified: true,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    },
-    status: 'shipped',
-    quantity: 1,
-    totalPrice: 2500,
-    paymentMethod: 'card',
-    trackingNumber: 'TRK123456789',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-16T14:30:00Z',
-    estimatedDelivery: '2024-01-20T18:00:00Z',
-  },
-  {
-    id: '2',
-    product: {
-      id: '2',
-      title: 'МАТОВАЯ ПОМАДА КАРАНДАШ 3B1 N°11',
-      description: 'Качественная матовая помада-карандаш для губ',
-      price: 890,
-      originalPrice: 1200,
-      category: 'beauty',
-      images: ['/api/placeholder/300/300'],
-      rating: 4.8,
-      reviewsCount: 156,
-      seller: {
-        id: '2',
-        name: 'BeautyStore',
-        avatar: '/api/placeholder/40/40',
-        verified: true,
-      },
-      inStock: true,
-      tags: ['новинка', 'хит'],
-      createdAt: '2024-01-14',
-      updatedAt: '2024-01-14',
-    },
-    buyer: {
-      id: '2',
-      name: 'Иван Петров',
-      email: 'ivan@example.com',
-      role: 'buyer' as const,
-      verified: true,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    },
-    seller: {
-      id: '2',
-      name: 'BeautyStore',
-      email: 'beauty@example.com',
-      role: 'seller' as const,
-      verified: true,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    },
-    status: 'delivered',
-    quantity: 2,
-    totalPrice: 1780,
-    paymentMethod: 'wallet',
-    createdAt: '2024-01-10T15:30:00Z',
-    updatedAt: '2024-01-12T09:15:00Z',
-  },
-  {
-    id: '3',
-    product: {
-      id: '3',
-      title: 'БЛЕСК ДЛЯ ГУБ',
-      description: 'Блестящий блеск для губ с долгим эффектом',
-      price: 450,
-      category: 'beauty',
-      images: ['/api/placeholder/300/300'],
-      rating: 4.2,
-      reviewsCount: 89,
-      seller: {
-        id: '3',
-        name: 'CosmeticShop',
-        avatar: '/api/placeholder/40/40',
-        verified: false,
-      },
-      inStock: true,
-      tags: ['популярное'],
-      createdAt: '2024-01-13',
-      updatedAt: '2024-01-13',
-    },
-    buyer: {
-      id: '2',
-      name: 'Иван Петров',
-      email: 'ivan@example.com',
-      role: 'buyer' as const,
-      verified: true,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    },
-    seller: {
-      id: '3',
-      name: 'CosmeticShop',
-      email: 'cosmetic@example.com',
-      role: 'seller' as const,
-      verified: false,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    },
-    status: 'pending',
-    quantity: 1,
-    totalPrice: 450,
-    paymentMethod: 'crypto',
-    createdAt: '2024-01-18T12:00:00Z',
-    updatedAt: '2024-01-18T12:00:00Z',
-  },
-]
-
 export function DealsContent() {
   const [deals, setDeals] = useState<Deal[]>([])
   const [loading, setLoading] = useState(true)
@@ -166,23 +17,25 @@ export function DealsContent() {
       setLoading(true)
       setError(null)
       
-      const response = await dealsAPI.getMyDeals({ limit: 50, offset: 0 })
+      console.log('🔄 Загружаем сделки...')
+      const response = await dealsAPI.getDeals({ limit: 50, offset: 0 })
+      console.log('✅ Ответ сервера (сделки):', response.data)
+      
       const dealsData = response.data.data || response.data
       const dealsArray = Array.isArray(dealsData) ? dealsData : []
       
       setDeals(dealsArray)
       saveDealsToStorage(dealsArray)
     } catch (err: any) {
-      console.error('Ошибка загрузки сделок:', err)
+      console.error('❌ Ошибка загрузки сделок:', err)
       setError(err.response?.data?.message || 'Ошибка загрузки сделок')
       
-      // Fallback на localStorage или моковые данные
+      // Fallback на localStorage
       const storedDeals = getDealsFromStorage()
       if (storedDeals && storedDeals.length > 0) {
         setDeals(storedDeals)
       } else {
-        setDeals(mockDeals)
-        saveDealsToStorage(mockDeals)
+        setDeals([])
       }
     } finally {
       setLoading(false)
@@ -286,4 +139,3 @@ export function DealsContent() {
     </div>
   )
 }
-

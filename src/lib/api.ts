@@ -1,8 +1,9 @@
 import { useAuthStore } from '@/store/auth'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { tokenManager } from './token-manager'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const API_URL = 'http://localhost:3000'
 
 // Кэш для GET запросов
 const cache = new Map<string, { data: any; timestamp: number }>()
@@ -27,8 +28,10 @@ export const clearCache = () => {
   cache.clear()
 }
 
+console.log('🔧 API_URL configured as:', API_URL);
+
 export const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -39,9 +42,16 @@ export const api = axios.create({
 // Request interceptor to add auth token and check cache
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token
+    console.log('🌐 Making request to:', config.baseURL + config.url);
+    
+    // Получаем токен из глобального менеджера
+    const token = tokenManager.getToken()
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log('🔑 Токен добавлен в запрос:', token.substring(0, 20) + '...')
+    } else {
+      console.log('⚠️ Токен не найден для запроса:', config.url)
     }
     
     // Проверяем кэш для GET запросов
@@ -79,8 +89,18 @@ api.interceptors.response.use(
     const { response } = error
 
     if (response?.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid - очищаем глобальный токен
+      tokenManager.clearAuth()
       useAuthStore.getState().logout()
+      
+      // Check if we're on transactions page - don't redirect or show toast
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname
+        if (currentPath.includes('/profile/transactions')) {
+          return Promise.reject(error)
+        }
+      }
+      
       toast.error('Сессия истекла. Пожалуйста, войдите снова.')
       
       // Redirect to login page
@@ -270,6 +290,12 @@ export const chatAPI = {
     api.post(`/chat/chats/${chatId}/participants`, data),
   
   leaveChat: (chatId: string) => api.post(`/chat/chats/${chatId}/leave`),
+  
+  // Admin chat methods
+  getAdminChat: () => api.get('/chat/admin-chat'),
+  
+  sendMessageToAdmin: (content: string) => 
+    api.post('/chat/admin-chat/message', { content }),
 }
 
 // Transactions API
@@ -282,6 +308,8 @@ export const transactionsAPI = {
     dateFrom?: string
     dateTo?: string
   }) => api.get('/transactions', { params }),
+  
+  getAllData: () => api.get('/transactions/all-data'),
   
   requestWithdrawal: (data: {
     amount: number
@@ -333,11 +361,10 @@ export const dealsAPI = {
 // Payment API
 export const paymentAPI = {
   createPayment: (data: {
-    productId: string
-    quantity: number
-    totalPrice: number
-    userId: string
+    amount: number
     paymentMethod: 'card' | 'wallet' | 'crypto'
+    description?: string
+    metadata?: any
   }) => api.post('/payment/create', data),
   
   getPayment: (id: string) => api.get(`/payment/${id}`),
@@ -465,8 +492,7 @@ export const supportAPI = {
   sendMessage: (data: {
     subject: string
     message: string
-    type: 'support' | 'complaint' | 'suggestion' | 'other'
-    priority: 'low' | 'medium' | 'high'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
   }) => api.post('/support/message', data),
   
   getMessages: (params?: {
@@ -481,6 +507,7 @@ export const supportAPI = {
   replyToMessage: (messageId: string, data: { reply: string }) =>
     api.post(`/support/messages/${messageId}/reply`, data),
 }
+
 
 // Academy API
 export const academyAPI = {
@@ -538,6 +565,94 @@ export const affiliateAPI = {
     limit?: number
     offset?: number
   }) => api.get('/affiliate/payouts', { params }),
+}
+
+// Profile API
+export const profileAPI = {
+  getProfile: () => api.get('/users/profile'),
+  
+  updateProfile: (data: {
+    name?: string
+    email?: string
+    phone?: string
+    bio?: string
+    avatar?: string
+  }) => api.put('/users/profile', data),
+  
+  getPayments: () => api.get('/users/payments'),
+  
+  addPaymentMethod: (data: {
+    type: 'card' | 'wallet' | 'crypto'
+    name: string
+    last4?: string
+    isDefault?: boolean
+  }) => api.post('/users/payments', data),
+  
+  removePaymentMethod: (paymentId: string) => api.delete(`/users/payments/${paymentId}`),
+  
+  addSocialLink: (data: {
+    platform: 'telegram' | 'instagram' | 'youtube' | 'tiktok'
+    username: string
+    url: string
+  }) => api.post('/users/social', data),
+  
+  removeSocialLink: (linkId: string) => api.delete(`/users/social/${linkId}`),
+  
+  getSocialLinks: () => api.get('/social/links'),
+  
+  createSocialLink: (data: { platform: string; username: string; url: string; verified?: boolean }) =>
+    api.post('/social/links', data),
+  
+  updateSocialLink: (id: string, data: { username?: string; url?: string; verified?: boolean }) =>
+    api.put(`/social/links/${id}`, data),
+  
+  deleteSocialLink: (id: string) => api.delete(`/social/links/${id}`),
+  
+  getUserData: (platform: string, username: string) => 
+    api.get(`/social/user-data/${platform}/${username}`),
+  
+  getUserDataByBody: (data: { platform: string; username: string }) =>
+    api.post('/social/user-data', data),
+  
+  validateSocialLink: (data: { platform: string; username: string }) =>
+    api.post('/social/validate', data),
+  
+  getSupportedPlatforms: () => api.get('/social/platforms'),
+  
+  getVerificationStatus: () => api.get('/users/verification'),
+  
+  submitVerification: (data: {
+    documentType: 'passport' | 'driver_license' | 'id_card'
+    documentNumber: string
+    documentImages: string[]
+  }) => api.post('/users/verification', data),
+  
+  getNotifications: () => api.get('/users/notifications'),
+  
+  updateNotificationSettings: (data: {
+    email: boolean
+    push: boolean
+    sms: boolean
+    marketing: boolean
+  }) => api.put('/users/notifications', data),
+  
+  getAffiliateStats: () => api.get('/affiliate/stats'),
+  
+  getSupportTickets: () => api.get('/support/tickets'),
+  
+  createSupportTicket: (data: {
+    subject: string
+    message: string
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+  }) => api.post('/support/message', data),
+  
+  getTransactions: () => api.get('/transactions/all-data'),
+  
+  createPayment: (data: {
+    amount: number
+    paymentMethod: 'card' | 'wallet' | 'crypto'
+    description?: string
+  }) => api.post('/payment/create', data),
 }
 
 // Telegram API

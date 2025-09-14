@@ -2,46 +2,61 @@
 
 import { MainLayout } from '@/components/layouts/main-layout'
 import { ProfileContent } from '@/components/profile/profile-content'
-import { useTelegram } from '@/components/providers/telegram-provider'
-import { useTelegramAPI } from '@/hooks/use-telegram-api'
+import { profileAPI } from '@/lib/api'
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 export default function ProfilePage() {
-  const { user, theme, haptic } = useTelegram()
-  const { userData, getUserData, getUserPhoto, isLoading } = useTelegramAPI()
   const [profileData, setProfileData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (user) {
-      // Используем данные из Telegram WebApp как fallback
-      const fallbackData = {
-        id: user.id,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        username: user.username,
-        languageCode: user.language_code,
-        isPremium: user.is_premium,
-        photoUrl: user.photo_url,
-        email: `${user.username || user.id}@telegram.user`,
-        phone: '+7 (999) 123-45-67' // Placeholder
+    loadProfileData()
+  }, [])
+
+  const loadProfileData = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Пытаемся загрузить данные с сервера
+      const response = await profileAPI.getProfile()
+      if (response.data) {
+        setProfileData(response.data.data || response.data)
       }
-      setProfileData(fallbackData)
+    } catch (error: any) {
+      console.error('Ошибка загрузки профиля:', error)
+      
+      // Если API недоступен, используем моковые данные
+      const mockProfileData = {
+        id: '123456789',
+        firstName: 'Иван',
+        lastName: 'Петров',
+        username: 'ivan_petrov',
+        languageCode: 'ru',
+        isPremium: false,
+        photoUrl: '/api/placeholder/100/100',
+        email: 'ivan.petrov@example.com',
+        phone: '+7 (999) 123-45-67',
+        bio: 'Продавец и покупатель на платформе',
+        verified: true,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-15T12:00:00Z'
+      }
+      
+      setProfileData(mockProfileData)
+      toast.error('Не удалось загрузить данные профиля. Показаны демонстрационные данные.')
+    } finally {
+      setIsLoading(false)
     }
-  }, [user])
-
-  useEffect(() => {
-    if (userData) {
-      setProfileData(userData)
-    }
-  }, [userData])
+  }
 
   return (
     <MainLayout>
       <ProfileContent 
         userData={profileData}
         isLoading={isLoading}
-        theme={theme}
-        onHaptic={haptic.impact}
+        theme="light"
+        onHaptic={() => {}} // Пустая функция для haptic
       />
     </MainLayout>
   )

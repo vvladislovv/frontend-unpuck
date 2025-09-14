@@ -30,19 +30,56 @@ export interface Product {
     verified: boolean
   }
   inStock: boolean
-  tags: string[]
+  tags?: string[]
   createdAt: string
   updatedAt: string
   isFavorite?: boolean
 }
 
-export type DealStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+export type DealStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'DISPUTED'
 
 export interface Deal {
   id: string
-  product: Product
-  buyer: User
-  seller: User
+  product: {
+    id: string
+    title: string
+    description: string
+    price: number
+    originalPrice?: number
+    category: string
+    images: string[]
+    rating: number
+    reviewsCount: number
+    seller: {
+      id: string
+      name: string
+      avatar?: string
+      verified: boolean
+    }
+    inStock: boolean
+    tags?: string[]
+    createdAt: string
+    updatedAt: string
+  }
+  buyer: {
+    id: string
+    name: string
+    email: string
+    role: 'buyer' | 'seller' | 'blogger' | 'manager'
+    verified: boolean
+    createdAt: string
+    updatedAt: string
+  }
+  seller: {
+    id: string
+    name: string
+    email: string
+    role: 'buyer' | 'seller' | 'blogger' | 'manager'
+    verified: boolean
+    avatar?: string
+    createdAt: string
+    updatedAt: string
+  }
   status: DealStatus
   quantity: number
   totalPrice: number

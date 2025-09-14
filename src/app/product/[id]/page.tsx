@@ -95,7 +95,7 @@ export default function ProductPage() {
             
             {/* Теги */}
             <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-              {mockProduct.tags.includes('новинка') && (
+              {mockProduct.tags?.includes('новинка') && (
                 <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                   NEW
                 </div>
