@@ -1,7 +1,7 @@
 {
-  "/profile/verification/page": "app/profile/verification/page.js",
-  "/profile/support/page": "app/profile/support/page.js",
   "/profile/page": "app/profile/page.js",
-  "/profile/affiliate/page": "app/profile/affiliate/page.js",
-  "/profile/transactions/page": "app/profile/transactions/page.js"
+  "/admin/page": "app/admin/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
+  "/catalog/page": "app/catalog/page.js"
 }

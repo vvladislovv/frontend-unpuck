@@ -114,14 +114,6 @@ export interface SearchFilters {
 export type ProductCategory = 'all' | 'clothing' | 'beauty' | 'home' | 'electronics' | 'other'
 export type ProductSubcategory = 'shirts' | 'pants' | 'dresses' | 'shoes' | 'accessories' | 'makeup' | 'skincare' | 'furniture' | 'decor' | 'kitchen' | 'phones' | 'laptops' | 'other'
 
-export interface Notification {
-  id: string
-  title: string
-  message: string
-  type: 'info' | 'success' | 'warning' | 'error'
-  read: boolean
-  createdAt: string
-}
 
 export interface PaymentMethod {
   id: string
@@ -214,7 +206,6 @@ export interface AppState {
   products: Product[]
   deals: Deal[]
   categories: Category[]
-  notifications: Notification[]
   searchFilters: SearchFilters
   loading: boolean
   error: string | null
@@ -238,32 +229,3 @@ export interface PaginatedResponse<T> {
   }
 }
 
-export interface AppState {
-  currentTab: TabType
-  user: User | null
-  products: Product[]
-  deals: Deal[]
-  categories: Category[]
-  notifications: Notification[]
-  searchFilters: SearchFilters
-  loading: boolean
-  error: string | null
-}
-
-// API ответы
-export interface ApiResponse<T> {
-  success: boolean
-  data: T
-  message?: string
-  error?: string
-}
-
-export interface PaginatedResponse<T> {
-  data: T[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-}

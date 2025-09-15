@@ -221,11 +221,11 @@ export function UserManagement({
       </Card>
 
       {/* Список пользователей */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {sortedUsers.map((user) => (
-          <Card key={user.id} className="p-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+          <Card key={user.id} className="p-4 hover:shadow-sm transition-shadow">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
                 {user.avatar ? (
                   <img
                     src={user.avatar}
@@ -233,124 +233,72 @@ export function UserManagement({
                     className="w-12 h-12 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-lg font-medium text-gray-600">
-                    {user.name.charAt(0)}
+                  <span className="text-sm font-medium text-gray-600">
+                    {user.name.substring(0, 5).toUpperCase()}
                   </span>
                 )}
               </div>
-              
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-                    {user.verified && (
-                      <ShieldCheckIcon className="h-5 w-5 text-green-500" />
-                    )}
-                    {user.isBlocked && (
-                      <ShieldExclamationIcon className="h-5 w-5 text-red-500" />
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={getRoleBadgeVariant(user.role)}>
-                      {getRoleLabel(user.role)}
-                    </Badge>
-                    {user.isBlocked && (
-                      <Badge variant="destructive">Заблокирован</Badge>
-                    )}
-                  </div>
+                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                    {getRoleLabel(user.role)}
+                  </Badge>
+                  {user.verified && (
+                    <ShieldCheckIcon className="h-4 w-4 text-green-500" />
+                  )}
+                  {user.isBlocked && (
+                    <ShieldExclamationIcon className="h-4 w-4 text-red-500" />
+                  )}
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="text-sm font-medium">{user.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Телефон</p>
-                    <p className="text-sm font-medium">{user.phone || 'Не указан'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Потрачено</p>
-                    <p className="text-sm font-medium">{user.totalSpent.toLocaleString()} ₽</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Заработано</p>
-                    <p className="text-sm font-medium">{user.totalEarned.toLocaleString()} ₽</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Сделок</p>
-                    <p className="text-sm font-medium">{user.dealsCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Товаров</p>
-                    <p className="text-sm font-medium">{user.productsCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Последний вход</p>
-                    <p className="text-sm font-medium">
-                      {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ru-RU') : 'Никогда'}
-                    </p>
-                  </div>
-                </div>
-                
-                {user.isBlocked && user.blockReason && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-800">
-                      <strong>Причина блокировки:</strong> {user.blockReason}
-                    </p>
-                  </div>
+              </div>
+              <div className="flex space-x-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onViewUser(user)}
+                  className="h-8 w-8 p-0"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEditUser(user)}
+                  className="h-8 w-8 p-0"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </Button>
+                {!user.verified && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onVerifyUser(user.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ShieldCheckIcon className="h-4 w-4" />
+                  </Button>
                 )}
-                
-                <div className="flex flex-wrap gap-2">
+                {user.isBlocked ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => onViewUser(user)}
+                    onClick={() => onUnblockUser(user.id)}
+                    className="h-8 px-2 text-xs"
                   >
-                    <EyeIcon className="h-4 w-4 mr-1" />
-                    Просмотр
+                    Разблокировать
                   </Button>
+                ) : (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => onEditUser(user)}
+                    onClick={() => onBlockUser(user.id, '')}
+                    className="h-8 w-8 p-0"
                   >
-                    <PencilIcon className="h-4 w-4 mr-1" />
-                    Редактировать
+                    <ShieldExclamationIcon className="h-4 w-4" />
                   </Button>
-                  {!user.verified && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onVerifyUser(user.id)}
-                    >
-                      <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                      Верифицировать
-                    </Button>
-                  )}
-                  {user.isBlocked ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onUnblockUser(user.id)}
-                    >
-                      Разблокировать
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onBlockUser(user.id, '')}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <ShieldExclamationIcon className="h-4 w-4 mr-1" />
-                      Заблокировать
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </Card>

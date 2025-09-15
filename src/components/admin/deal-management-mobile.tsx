@@ -1,6 +1,5 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Deal, DealStatus } from '@/types'
@@ -40,6 +39,7 @@ export function DealManagementMobile({
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [sortBy, setSortBy] = useState('date')
   const [showFilters, setShowFilters] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<'pending' | 'active' | 'completed' | 'all'>('all')
 
   const statuses = [
     { value: 'all', label: 'Все статусы' },
@@ -55,8 +55,21 @@ export function DealManagementMobile({
                          deal.buyer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          deal.seller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          deal.id.includes(searchQuery)
+    
+    // Фильтр по статусу из выпадающего списка
     const matchesStatus = selectedStatus === 'all' || deal.status === selectedStatus
-    return matchesSearch && matchesStatus
+    
+    // Фильтр по кнопкам (Ожидают, Активные, Завершены)
+    let matchesActiveFilter = true
+    if (activeFilter === 'pending') {
+      matchesActiveFilter = deal.status === 'PENDING'
+    } else if (activeFilter === 'active') {
+      matchesActiveFilter = ['CONFIRMED', 'SHIPPED'].includes(deal.status)
+    } else if (activeFilter === 'completed') {
+      matchesActiveFilter = deal.status === 'COMPLETED'
+    }
+    
+    return matchesSearch && matchesStatus && matchesActiveFilter
   })
 
   const sortedDeals = [...filteredDeals].sort((a, b) => {
@@ -124,15 +137,46 @@ export function DealManagementMobile({
           <p className="text-sm sm:text-base text-gray-600">Всего сделок: {deals.length}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="text-xs">
+          <button
+            onClick={() => setActiveFilter('pending')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              activeFilter === 'pending'
+                ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             Ожидают: {deals.filter(d => d.status === 'PENDING').length}
-          </Badge>
-          <Badge variant="default" className="text-xs">
+          </button>
+          <button
+            onClick={() => setActiveFilter('active')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              activeFilter === 'active'
+                ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             Активные: {deals.filter(d => ['CONFIRMED', 'SHIPPED'].includes(d.status)).length}
-          </Badge>
-          <Badge variant="outline" className="text-xs">
+          </button>
+          <button
+            onClick={() => setActiveFilter('completed')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              activeFilter === 'completed'
+                ? 'bg-green-100 text-green-800 border-2 border-green-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             Завершены: {deals.filter(d => d.status === 'COMPLETED').length}
-          </Badge>
+          </button>
+          <button
+            onClick={() => setActiveFilter('all')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              activeFilter === 'all'
+                ? 'bg-gray-100 text-gray-800 border-2 border-gray-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Все: {deals.length}
+          </button>
         </div>
       </div>
 

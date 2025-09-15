@@ -76,31 +76,58 @@ export const loginWithTestUser = async (): Promise<AuthResponse | null> => {
   try {
     console.log('🔐 Попытка входа с тестовым пользователем...')
     
-    const response = await fetch('http://localhost:3000/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        identifier: 'testuser',
-        password: 'password123'
-      })
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      console.log('✅ Успешный вход с тестовым пользователем:', data.user.firstName, data.user.lastName)
-      
-      // Сохраняем токен в localStorage
-      localStorage.setItem('auth_token', data.token)
-      
-      return data
-    } else {
-      console.log('❌ Ошибка входа с тестовым пользователем:', response.status)
-      return null
+    // ПРИНУДИТЕЛЬНО очищаем localStorage перед входом
+    if (typeof window !== 'undefined') {
+      console.log('🧹 ПРИНУДИТЕЛЬНАЯ очистка localStorage в loginWithTestUser...')
+      localStorage.clear()
     }
+    
+    // Пробуем разных пользователей с данными (сначала тех, у кого больше данных)
+    const testUsers = [
+      { identifier: 'user1@test.com', password: 'user1123' }, // 4 продукта, 8 сделок, 4 транзакции, 3 реферала
+      { identifier: 'user2@test.com', password: 'user2123' }, // 9 продуктов, 3 сделки, 6 транзакций, 2 реферала
+      { identifier: 'user3@test.com', password: 'user3123' }, // 7 продуктов, 6 сделок, 6 транзакций, 1 реферал
+      { identifier: 'testuser', password: 'password123' }     // 9 продуктов, 9 сделок, 26 транзакций, 2 реферала
+    ]
+    
+    for (const user of testUsers) {
+      try {
+        console.log(`Пробуем пользователя: ${user.identifier}`)
+        
+        const response = await fetch('http://localhost:3000/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(user)
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ Успешный вход с тестовым пользователем:', data.user.firstName, data.user.lastName)
+          
+          // Проверяем, есть ли у пользователя данные для статистики
+          const hasData = await checkUserHasStatsData(data.token)
+          if (hasData) {
+            console.log('✅ Пользователь имеет данные для статистики')
+            // Сохраняем токен в localStorage
+            localStorage.setItem('auth_token', data.token)
+            return data
+          } else {
+            console.log('⚠️ Пользователь не имеет данных для статистики, пробуем следующего')
+          }
+        } else {
+          console.log(`❌ Ошибка входа с ${user.identifier}:`, response.status)
+        }
+      } catch (error) {
+        console.log(`❌ Ошибка входа с ${user.identifier}:`, error)
+      }
+    }
+    
+    console.log('❌ Не удалось войти ни с одним тестовым пользователем')
+    return null
   } catch (error) {
-    console.error('❌ Ошибка входа с тестовым пользователем:', error)
+    console.error('❌ Общая ошибка входа с тестовым пользователем:', error)
     return null
   }
 }
@@ -109,13 +136,16 @@ export const loginWithTestUser = async (): Promise<AuthResponse | null> => {
 export const autoAuth = async (): Promise<AuthResponse | null> => {
   console.log('🚀 Автоматическая авторизация...')
   
-  // Сначала пробуем существующий токен
-  const existingAuth = await autoLoginWithExistingToken()
-  if (existingAuth) {
-    return existingAuth
+  // ПРИНУДИТЕЛЬНО очищаем localStorage
+  if (typeof window !== 'undefined') {
+    console.log('🧹 ПРИНУДИТЕЛЬНАЯ очистка localStorage в autoAuth...')
+    localStorage.clear()
   }
   
-  // Если нет токена, пробуем войти с тестовым пользователем
+  // Пропускаем проверку существующего токена и сразу пробуем тестовых пользователей
+  console.log('🔄 Пропускаем проверку существующего токена, сразу пробуем тестовых пользователей...')
+  
+  // Пробуем войти с тестовым пользователем
   const testAuth = await loginWithTestUser()
   if (testAuth) {
     return testAuth
@@ -123,4 +153,29 @@ export const autoAuth = async (): Promise<AuthResponse | null> => {
   
   console.log('❌ Не удалось авторизоваться автоматически')
   return null
+}
+
+// Функция для проверки, есть ли у пользователя данные для статистики
+const checkUserHasStatsData = async (token: string): Promise<boolean> => {
+  try {
+    const response = await fetch('http://localhost:3000/statistics/user?period=30d', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const stats = await response.json()
+      // Проверяем, есть ли значимые данные (не только продукты)
+      const hasData = stats.totalDeals > 0 || stats.totalTransactions > 0 || stats.totalReferrals > 0 || stats.totalRevenue > 0
+      console.log(`📊 Пользователь имеет данные: ${hasData}`, stats)
+      return hasData
+    }
+    
+    return false
+  } catch (error) {
+    console.error('❌ Ошибка проверки данных пользователя:', error)
+    return false
+  }
 }

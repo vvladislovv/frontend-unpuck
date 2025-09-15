@@ -185,17 +185,6 @@ export const usersAPI = {
   getReferrals: () => api.get('/users/referrals'),
   getBalance: () => api.get('/users/balance'),
   
-  getNotifications: (params?: {
-    limit?: number
-    offset?: number
-    unread?: boolean
-  }) => api.get('/users/notifications', { params }),
-  
-  markNotificationRead: (id: string) => 
-    api.put(`/users/notifications/${id}/read`),
-  
-  markAllNotificationsRead: () => 
-    api.put('/users/notifications/read-all'),
 }
 
 // Products API
@@ -625,16 +614,6 @@ export const affiliateAPI = {
 
 // Profile API
 export const profileAPI = {
-  getProfile: () => api.get('/users/profile'),
-  
-  updateProfile: (data: {
-    name?: string
-    email?: string
-    phone?: string
-    bio?: string
-    avatar?: string
-  }) => api.put('/users/profile', data),
-  
   getPayments: () => api.get('/users/payments'),
   
   addPaymentMethod: (data: {
@@ -683,14 +662,6 @@ export const profileAPI = {
     documentImages: string[]
   }) => api.post('/users/verification', data),
   
-  getNotifications: () => api.get('/users/notifications'),
-  
-  updateNotificationSettings: (data: {
-    email: boolean
-    push: boolean
-    sms: boolean
-    marketing: boolean
-  }) => api.put('/users/notifications', data),
   
   getAffiliateStats: () => api.get('/affiliate/stats'),
   

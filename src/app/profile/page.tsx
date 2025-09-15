@@ -35,27 +35,13 @@ export default function ProfilePage() {
           </div>
         </div>
 
+
         {/* Профиль */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-3 sm:px-4 py-3 border-b border-gray-200">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Профиль</h3>
           </div>
           <div className="divide-y divide-gray-200">
-            <button 
-              onClick={() => router.push('/profile/edit')}
-              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <User className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
-                <div className="flex-1 text-left min-w-0">
-                  <h4 className="text-sm font-medium text-gray-900 truncate">Профиль</h4>
-                  <p className="text-xs text-gray-500 truncate">Личная информация</p>
-                </div>
-              </div>
-              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
             <button 
               onClick={() => router.push('/profile/transactions')}
               className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors"
@@ -170,23 +156,6 @@ export default function ProfilePage() {
                 <div className="flex-1 text-left min-w-0">
                   <h4 className="text-sm font-medium text-gray-900 truncate">Поддержка</h4>
                   <p className="text-xs text-gray-500 truncate">Помощь и контакты</p>
-                </div>
-              </div>
-              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <button 
-              onClick={() => router.push('/profile/notifications')}
-              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <svg className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.828 7l2.586 2.586a2 2 0 002.828 0L16 7m-5 5h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="flex-1 text-left min-w-0">
-                  <h4 className="text-sm font-medium text-gray-900 truncate">Уведомления</h4>
-                  <p className="text-xs text-gray-500 truncate">Настройки уведомлений</p>
                 </div>
               </div>
               <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -232,7 +232,7 @@ export default function AdminPage() {
             originalPrice: parseInt(deal.product?.price) || 0,
             category: '',
             subcategory: '',
-            images: [],
+            images: deal.product?.images || [],
             rating: 4.5,
             reviewsCount: 0,
             seller: {
@@ -268,7 +268,7 @@ export default function AdminPage() {
             createdAt: deal.createdAt,
             updatedAt: deal.updatedAt,
           },
-          status: deal.status?.toLowerCase() || 'pending',
+          status: deal.status || 'PENDING',
           totalPrice: parseInt(deal.amount) || 0,
           quantity: 1,
           shippingAddress: {

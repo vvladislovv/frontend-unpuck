@@ -4,19 +4,11 @@ import {
     ChevronRightIcon,
     CreditCardIcon,
     ShareIcon,
-    ShieldCheckIcon,
-    UserIcon
+    ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 
 const profileItems = [
-  {
-    id: 'profile',
-    title: 'Профиль',
-    description: 'Личная информация',
-    icon: UserIcon,
-    href: '/profile/edit',
-  },
   {
     id: 'transactions',
     title: 'Транзакции',
@@ -79,4 +71,3 @@ export function ProfileSection() {
     </div>
   )
 }
-

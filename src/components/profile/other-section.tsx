@@ -1,7 +1,6 @@
 'use client'
 
 import {
-    BellIcon,
     ChatBubbleLeftRightIcon,
     ChevronRightIcon,
     UserGroupIcon
@@ -15,13 +14,6 @@ const otherItems = [
     description: 'Помощь и контакты',
     icon: ChatBubbleLeftRightIcon,
     href: '/support',
-  },
-  {
-    id: 'notifications',
-    title: 'Уведомления',
-    description: 'Настройки уведомлений',
-    icon: BellIcon,
-    href: '/notifications',
   },
   {
     id: 'affiliate',
